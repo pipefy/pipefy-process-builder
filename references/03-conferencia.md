@@ -8,8 +8,8 @@ Sua pergunta única é: **o pipe real corresponde ao que o spec pediu?** Você n
 não melhora nada, não opina sobre o desenho. Diferença entre spec e realidade → você registra.
 
 Leia nesta ordem, **nesta mesma pasta de referências** (caminho no seu prompt):
-`graphql-recipes.md` (seção 1 — a query que você vai usar) e `handoff-schemas.md` (seções 1 e 2 —
-o formato do spec e do changes).
+`graphql-recipes.md` (seção 1 — a query que você vai usar), `handoff-schemas.md` (seções 1 e 2 —
+o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
 
 ## Procedimento
 
@@ -39,6 +39,11 @@ o formato do spec e do changes).
    - **Agentes de IA** — existem, estão nas fases previstas e **no estado de ativação que o spec
      pediu**. Agente ativo que o spec não pediu ativo é divergência de severidade alta: consome
      crédito e age nos cards do cliente.
+   - **Integrações iPaaS** — para cada linha do spec, use o catálogo do `pipe_id` dono para ler o
+     flow e validar: `flow_id`, trigger, steps/pieces, conexão reutilizada por `externalId`, estado
+     de validação e estado de publicação. Flow publicado/habilitado sem aprovação explícita
+     registrada no changes é divergência alta. Conexão ausente ou pendência manual corretamente
+     registrada não é divergência; ausência desse registro é.
    - **Desvios declarados** — os que o changes já registrou não são novidade: confirme que são
      exatamente esses e nada além.
 4. **Lints obrigatórios** — três verificações que não vêm do spec, mas quebram o processo na prática
@@ -67,9 +72,9 @@ modo: completa | incremental
 ```
 
 1. **Divergências** — tabela: `# | Severidade (Crítica/Alta/Média) | Item (fase/campo/condicional/
-   automação/agente) | Esperado (spec) | Encontrado (pipe) | id`. **Liste apenas divergências.** Se
+   automação/agente/integração) | Esperado (spec) | Encontrado (pipe/iPaaS) | id`. **Liste apenas divergências.** Se
    não houver, escreva "Nenhuma" e informe os totais conferidos (ex.: "8 fases, 18 campos, 4
-   automações, 1 condicional — todos conformes").
+   automações, 1 condicional, 1 integração — todos conformes").
 2. **Pendências manuais na UI** — o que a API não configura e ficou faltando para o processo
    funcionar. **A ligação das fases vem primeiro e em destaque**, com a lista origem → destino.
 3. **Não verificável nesta etapa** — o que só o teste funcional ou a UI mostram (comportamento de
@@ -99,3 +104,5 @@ mantenha no arquivo as divergências que seguem abertas, se houver.
   só existe spec × realidade.
 - Se o `spec.md` ou o `changes.md` estiverem ausentes ou ilegíveis, pare e reporte; não adivinhe.
 - Siga `connector-rules.md`: sem busca global, tudo escopado por `pipe_id`.
+- Para iPaaS, expanda somente as tools de leitura/validação necessárias. Você nunca publica,
+  habilita, testa com efeito externo, cria conexão nem executa retry durante a conferência.

@@ -44,7 +44,7 @@ versao: 1
 ```
 
 **Resumo** (logo após o frontmatter, ≤5 linhas): objetivo + nº de fases + nº aproximado de campos +
-automações + agentes de IA.
+automações + agentes de IA + integrações iPaaS.
 
 ### Seções (ordem fixa)
 1. **Objetivo do processo** — 2 a 4 frases. O que o processo faz e para quem.
@@ -56,17 +56,21 @@ automações + agentes de IA.
 5. **Condicionais** — tabela: `Nome | Fase (onde fica ancorada) | Campo relacionado | Regra`.
 6. **Agentes de IA** — tabela: `Nome | Fase(s) | Tipo (AI 2.0 / +IDP / +Websearch) | Entradas |
    Saídas | Observações de consumo`.
-7. **Variações aplicadas** — decisões do decision_catalog escolhidas, e as recusadas relevantes.
-8. **Entregabilidade** — tabela: `Item | Marca (Nativo / Contorno / Manual na UI / Integração) |
+7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
+   Entradas → saídas | Conexão (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo |
+   Estado esperado (rascunho / publicar após aprovação)`. Se não houver: "Nenhuma". Não registrar
+   credenciais, tokens nem URLs OAuth.
+8. **Variações aplicadas** — decisões do decision_catalog escolhidas, e as recusadas relevantes.
+9. **Entregabilidade** — tabela: `Item | Marca (Nativo / Contorno / Manual na UI / Integração) |
    Observação`. Classifica cada item do spec quanto ao que a ferramenta consegue entregar, para o
    solicitante aprovar sabendo o que vai sobrar de trabalho manual. Ver `connector-rules.md`, seção 4.
-9. **Pendências manuais previstas** — o que ficará para configuração humana no Pipefy, com a
+10. **Pendências manuais previstas** — o que ficará para configuração humana no Pipefy, com a
    **ligação das fases em primeiro lugar e em destaque** quando o build for de pipe novo: sem ela o
    processo não roda, por mais completa que a estrutura esteja.
-10. **Open questions** — DEVE estar vazio. Spec com open question não é aprovável.
+11. **Open questions** — DEVE estar vazio. Spec com open question não é aprovável.
 
 ### Variante da porta C (deltas)
-As seções 2 a 6 ganham a coluna `Operação (Adicionar / Alterar / Remover / Manter)`, referenciando
+As seções 2 a 7 ganham a coluna `Operação (Adicionar / Alterar / Remover / Manter)`, referenciando
 os ids do as-is que está no `diagnostico.md`. Itens `Remover` sobre estrutura com dados indicam a
 alternativa aplicada (default: renomear com tag `[Inativo]`) ou a confirmação explícita do
 solicitante para remoção real. O diagnóstico **não é copiado para cá** — ele já existe no
@@ -88,7 +92,7 @@ status: COMPLETO | PARCIAL
 ---
 ```
 
-**Resumo** (≤5 linhas): pipe + contagens (fases/campos/automações/agentes) + nº de desvios + nº de
+**Resumo** (≤5 linhas): pipe + contagens (fases/campos/automações/agentes/integrações) + nº de desvios + nº de
 pendências.
 
 ### Seções (ordem fixa)
@@ -97,14 +101,17 @@ pendências.
 3. **Automações e condicionais** — tabela: `Nome | id | Status (criada e verificada / criada sem
    verificação / não criada — motivo)`.
 4. **Agentes de IA** — tabela: `Nome | Status (configurado / parcial / manual pendente) | O que falta`.
-5. **Desvios do spec** — diferença entre especificado e criado, com motivo. Se vazio: "Nenhum".
-6. **Pendências manuais obrigatórias** — o que precisa ser feito na UI para o processo funcionar,
+5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Conexão reutilizada (externalId) |
+   Validação | Teste (run_id/status ou não executado) | Publicação (rascunho/publicado/habilitado) |
+   Status | O que falta`. Não incluir segredo, token, URL OAuth ou payload sensível.
+6. **Desvios do spec** — diferença entre especificado e criado, com motivo. Se vazio: "Nenhum".
+7. **Pendências manuais obrigatórias** — o que precisa ser feito na UI para o processo funcionar,
    **começando pela ligação das fases** (origem → destino, na ordem do fluxo), quando aplicável.
    Esta seção é a que o consultor vai executar à mão: escreva como instrução, não como aviso.
-7. **Pendências / retomada** — se PARCIAL: o que falta e de onde retomar.
-8. **Foco sugerido para o teste** — 3 a 5 pontos de menor confiança.
+8. **Pendências / retomada** — se PARCIAL: o que falta e de onde retomar.
+9. **Foco sugerido para o teste** — 3 a 5 pontos de menor confiança.
 
-**Na porta C:** as seções 1 a 4 reportam por delta (`Operação | Item | id | Status`), incluindo os
+**Na porta C:** as seções 1 a 5 reportam por delta (`Operação | Item | id | Status`), incluindo os
 `Manter` verificados como intactos. Registrar o mapeamento de cards feito antes das alterações e
 cada remoção/inativação com a confirmação correspondente.
 
@@ -129,8 +136,8 @@ modo: completa | incremental
 ---
 ```
 
-Seções: **Divergências** (tabela `# | Item | Esperado (spec) | Encontrado (pipe) | id` — só
-divergências), **Não verificável nesta etapa**, **Totais conferidos**.
+Seções: **Divergências** (tabela `# | Item | Esperado (spec) | Encontrado (pipe/iPaaS) | id` — só
+divergências), **Pendências manuais na UI**, **Não verificável nesta etapa**, **Totais conferidos**.
 
 ---
 
@@ -145,12 +152,14 @@ trabalho: <slug>
 testado_em: <YYYY-MM-DD HH:MM>
 resultado: PASS | FAIL
 card_de_teste: <id | n/a>
+ipaas_runs: [<run_id | n/a>]
 modo: completo | incremental
 ---
 ```
 
 ### Seções (ordem fixa)
 1. **Casos executados** — tabela: `Caso | Ação | Resultado esperado | Resultado obtido | Status`.
+   Para iPaaS, identificar o flow/run sem registrar dados sensíveis.
 2. **Falhas** — onde (com id), o que ocorre, como reproduzir. Se vazio: "Nenhuma".
 3. **Não testável** — o que só pode ser validado na UI (templates de e-mail, visual de
    condicional) ou o que não foi executado por risco de efeito externo em pipe vivo.
@@ -221,8 +230,8 @@ phase_id, campos com internal_id, automações e condicionais com id, agentes co
 | Diagnóstico (porta A) | pipe via `AuditPipe` (1 chamada) + brain + documentos do cliente | `diagnostico.md` |
 | Planner | brain + conversa com o solicitante + `diagnostico.md` (porta C) | `spec.md` |
 | Builder | `spec.md` (+ divergências da `conferencia.md` ou correções do `review.md`) | pipe do cliente + `changes.md` (+ `snapshot-as-is.md` na porta C) |
-| Conferência | `spec.md` + `changes.md` + 1 leitura do pipe | `conferencia.md` |
-| Teste funcional (opcional) | `spec.md` + `changes.md` + `conferencia.md` | card de teste (temporário) + `test-results.md` |
+| Conferência | `spec.md` + `changes.md` + 1 leitura do pipe + leitura iPaaS quando houver integração | `conferencia.md` |
+| Teste funcional (opcional) | `spec.md` + `changes.md` + `conferencia.md` | card de teste (temporário) + runs iPaaS aprovados + `test-results.md` |
 | Review completo (opcional) | `spec.md` + `changes.md` + `conferencia.md` + `test-results.md` + 1 leitura do pipe | `review.md` (+ `snapshot-final.md` se pedido) |
 
 Ninguém lê a conversa de outra etapa. Ninguém relê o pipe fase por fase.

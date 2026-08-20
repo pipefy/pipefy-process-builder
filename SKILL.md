@@ -29,6 +29,11 @@ Dois conectores (MCP) sustentam o fluxo:
 - **Pipefy Brain (Corporate)** — para o grounding no conhecimento (ver `references/brain-access.md`).
   Sem ele o fluxo segue com julgamento consultivo, mas avise que ficará sem o grounding do brain.
 
+Quando o spec incluir uma **integração iPaaS**, o mesmo connector Pipefy também precisa expor o
+catálogo iPaaS do pipe alvo. Siga `references/ipaas.md`: confirme-o de forma escopada antes de
+construir, não carregue o catálogo inteiro e não trate falha de plano/permissão como falha genérica
+do connector.
+
 ## As três portas
 
 **Primeira coisa a fazer: saber qual porta.** Se o pedido já deixa claro, **não pergunte** —
@@ -101,7 +106,9 @@ Ofereça ao entregar, explicando o que cada uma acrescenta — nunca rode por co
 
 - **Teste funcional** (`references/teste-funcional.md`, subagente `model: "sonnet"`) — cria card de
   teste e exercita o fluxo de verdade: obrigatórios bloqueando avanço, condicionais aparecendo,
-  automações disparando. Vale quando o processo tem automação crítica ou vai direto para produção.
+  automações disparando. Para iPaaS, também valida runs aprovados; efeito em sistema externo exige
+  aprovação explícita e dados descartáveis. Vale quando o processo tem automação crítica ou vai direto
+  para produção.
 - **Review completo** (`references/review-completo.md`, subagente `model: "sonnet"`) — o portão de
   qualidade: conformidade com nomenclatura e best practices, coerência spec × construção,
   segurança, e veredito SHIP / NEEDS WORK / BLOCK. Vale em cliente grande ou entrega formal.
@@ -141,6 +148,11 @@ quantidade de chamadas. Portanto:
   trabalho do consultor por nada.
 - **Vocabulário do produto:** quando o consultor disser "integração", ele quase sempre quer dizer
   **iPaaS**, não automação nem agente de IA. Confirme o sentido em vez de seguir falando de outra coisa.
+  Se a integração entrar no escopo aprovado, ela é construível pelo fluxo em `references/ipaas.md`;
+  conexão nova/rotação de credencial continua fora do escopo e vira handoff explícito.
+- **iPaaS tem três portões distintos:** aprovação do spec para criar/alterar rascunho, aprovação
+  específica para teste com efeito externo e aprovação específica para publicar/habilitar. Nunca
+  considere um deles implícito nos outros.
 - **Agente de IA só entra se for pedido.** Há clientes que vetam IA por contrato. Nunca comece a
   montar um agente sem pedido explícito.
 - **Um pipe é identificado por id, nunca por nome.** Rótulos e slugs se repetem entre pipes — em

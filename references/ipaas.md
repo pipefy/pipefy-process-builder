@@ -52,7 +52,7 @@ segredos, e exigem um fluxo de autorização próprio.
    tenha expressão `shape_unverified`.
 2. **Construir rascunho.** Crie ou altere somente os flows e passos explicitamente aprovados no spec.
    Registre `flow_id`, trigger, pieces e status de validade retornado. **Limitação do transporte MCP:**
-   não envie aspas simples (`'`) nem duplas (`\"`) em nenhum valor escrito em step de flow — nome,
+   não envie aspas simples (`'`) nem duplas (`"`) em nenhum valor escrito em step de flow — nome,
    mensagem, template, campo de input, payload ou expressão/data pill. Não escape, não troque por
    JSON e não repita a chamada para tentar contornar. Reescreva o texto e a expressão sem aspas; se
    o valor exigir aspas para funcionar, deixe aquele input como pendência manual para configuração

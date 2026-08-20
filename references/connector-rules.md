@@ -116,8 +116,18 @@ interrompe o trabalho do consultor por nada.
 - Fluxo seguro: catálogo compacto → schema de uma tool → chamada. Nunca expanda todos os schemas.
 - Depois de timeout/erro em `call_ipaas_tool`, não repita. A ação pode já ter executado; confira flow,
   lista de runs ou run específico e registre a retomada.
-- Validar rascunho não autoriza teste externo. Testar externamente não autoriza publicar. Publicar ou
-  habilitar sem aprovação explícita é mudança indevida. Veja `ipaas.md` para o ciclo completo.
+- **Expressão sem procedência (data pill no escuro).** Não escreva `{{trigger...}}` ou
+  `{{step_...}}` por analogia com outro webhook/piece. Para cada expressão, registre a evidência do
+  path: schema real do pipe, schema/documentação da piece/action ou amostra segura. Schema de campo
+  Pipefy não prova sozinho o envelope do trigger. Sem path comprovado, marque `shape_unverified`,
+  peça autorização para teste controlado se necessário e não publique o flow. Validação estrutural
+  não elimina essa pendência.
+- Conexão ausente bloqueia somente o trecho dependente, não o restante do build. Registre piece,
+  finalidade e o link `https://app.pipefy.com/pipes/<pipe_id>/integrations`; não crie um mock que
+  pareça flow funcional nem tente criar/rotacionar a conexão.
+- Validar rascunho não autoriza teste externo, nem comprova data pills. Testar externamente não
+  autoriza publicar. Publicar ou habilitar sem aprovação explícita é mudança indevida. Veja
+  `ipaas.md` para o ciclo completo.
 
 ## 5. Pipe clonado — risco de escrever no pipe errado
 

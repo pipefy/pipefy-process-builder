@@ -40,10 +40,11 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
      pediu**. Agente ativo que o spec não pediu ativo é divergência de severidade alta: consome
      crédito e age nos cards do cliente.
    - **Integrações iPaaS** — para cada linha do spec, use o catálogo do `pipe_id` dono para ler o
-     flow e validar: `flow_id`, trigger, steps/pieces, conexão reutilizada por `externalId`, estado
-     de validação e estado de publicação. Flow publicado/habilitado sem aprovação explícita
-     registrada no changes é divergência alta. Conexão ausente ou pendência manual corretamente
-     registrada não é divergência; ausência desse registro é.
+     flow e validar: `flow_id`, trigger, steps/pieces, conexões reutilizadas por `externalId`, estado
+     de validação, situação dos data pills e estado de publicação. Flow publicado/habilitado sem
+     aprovação explícita registrada no changes, ou com data pill `shape_unverified`, é divergência
+     alta. Conexão ausente ou pendência manual corretamente registrada com link de integrações não é
+     divergência; ausência desse registro é.
    - **Desvios declarados** — os que o changes já registrou não são novidade: confirme que são
      exatamente esses e nada além.
 4. **Lints obrigatórios** — três verificações que não vêm do spec, mas quebram o processo na prática

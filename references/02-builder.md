@@ -39,10 +39,11 @@ que existe e o que falta e continue de onde parou.
 
 1. **Criar o pipe** na org de destino confirmada no spec.
    - Se o spec tiver integração iPaaS, faça agora a pré-checagem de conexão do `ipaas.md`, antes de
-     configurar qualquer passo externo: descubra a tool de listagem no catálogo desse novo `pipe_id`,
-     liste conexões compatíveis e registre o `externalId` reutilizado. Ausência de conexão deve virar
-     pendência manual com a recomendação de criá-la antes de retomar a integração; não crie nem
-     rotacione conexão.
+     configurar qualquer passo: descubra a tool de listagem no catálogo desse novo `pipe_id`, liste
+     todas as conexões exigidas — inclusive Pipefy para o trigger — e registre os `externalId`s
+     reutilizados. Ausência de conexão deve virar pendência manual com piece, finalidade e o link
+     `https://app.pipefy.com/pipes/<pipe_id>/integrations`; entregue o blueprint para retomada, sem
+     criar flow mock, credencial ou rotação de conexão.
 2. **Clean slate:** remova as fases default (Inbox/Doing/Done) para o pipe conter exatamente as
    fases do spec — sequencie criação/remoção para o pipe nunca ficar sem fase; jamais delete fase
    com cards sem confirmação.
@@ -81,8 +82,10 @@ que existe e o que falta e continue de onde parou.
     de ligações a fazer na aba "Fluxo" da UI (origem → destino, na ordem do fluxo).
 12. **Integrações iPaaS (somente quando previstas).** Siga `ipaas.md`: confirme o catálogo no
     `pipe_id` dono, expanda um schema por vez, use a conexão confirmada na pré-checagem (ou pare o
-    item como parcial se ela não existir), construa o rascunho e valide-o. Fluxo sem efeito externo
-    pode ser testado após validar;
+    item como parcial se ela não existir), construa o rascunho e valide-o. Para cada data pill,
+    registre a fonte de evidência e marque `shape_unverified` quando o path não for comprovado;
+    pergunte antes de executar o teste controlado necessário e não publique enquanto houver essa
+    marca. Fluxo sem efeito externo pode ser testado após validar;
     teste com efeito externo só ocorre após aprovação explícita registrada na conversa. Publicar ou
     habilitar exige outra aprovação explícita; sem ela, deixe o flow como rascunho validado e pronto
     para publicação. Registre flow_id, validação, run_id/status e estado de publicação no changes.

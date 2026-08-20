@@ -36,8 +36,9 @@ Leia antes: `handoff-schemas.md` (todas as seções), `nomenclature.md` e
   em SLAs, split de pipe só com justificativa real.
 - Segurança: pipe privado, edição pelo responsável, exclusão por admin, formulário inicial
   restrito — ou a pendência manual correspondente documentada no `changes.md`.
-- Integrações iPaaS: flow no pipe dono correto, conexão apenas reutilizada, validação e run
-  documentados sem segredos, e publicação/habilitação compatível com a aprovação explícita.
+- Integrações iPaaS: flow no pipe dono correto, conexões apenas reutilizadas, procedência dos data
+  pills documentada (`shape_verified` antes de publicar), validação e run documentados sem segredos,
+  e publicação/habilitação compatível com a aprovação explícita.
 
 **2. Coerência spec × construção × testes** — o pipe entrega o que o spec prometeu? Os desvios
 declarados no changes são justificados ou escondem trabalho não feito? Se houve teste funcional, ele

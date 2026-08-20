@@ -53,13 +53,15 @@ desenhe-o no spec e siga `ipaas.md`; não o descubra no meio do build.
 **Discovery de integração (somente se houver integração no escopo):** fixe qual pipe será dono do
 flow, sistema/piece externo, trigger, passos, campos de entrada e saída, comportamento de erro,
 efeito externo do teste e estado desejado. Em uma porta C, depois de confirmar o pipe alvo, faça a
-pré-checagem somente de leitura: descubra a tool de listagem de conexões no catálogo iPaaS, liste as
-conexões compatíveis e registre no spec o `externalId` escolhido. Mais de uma opção exige escolha
-explícita do consultor; nenhuma opção vira pendência manual e recomendação para criar a conexão antes
-do build. Em uma porta B, o pipe/workspace ainda não existe: registre `conexão a confirmar após
-criação do pipe` e delegue a mesma checagem ao Builder logo após a criação. Em ambos os casos, não
-receba credencial nem crie/rotacione conexão. O spec também deve registrar que publicar/habilitar
-dependerá de aprovação explícita posterior.
+pré-checagem somente de leitura: descubra a tool de listagem de conexões no catálogo iPaaS e confira
+as conexões exigidas por **cada** piece, inclusive a conexão Pipefy do trigger. Registre no spec os
+`externalId`s escolhidos. Mais de uma opção exige escolha explícita do consultor; nenhuma opção vira
+pendência manual, com piece/finalidade e o link
+`https://app.pipefy.com/pipes/<pipe_id>/integrations` para criação antes da retomada. Em uma porta B,
+o pipe/workspace ainda não existe: registre `conexões a confirmar após criação do pipe` e delegue a
+mesma checagem ao Builder logo após a criação. Em ambos os casos, não receba credencial nem
+crie/rotacione conexão. O spec também deve registrar que publicar/habilitar dependerá de aprovação
+explícita posterior.
 
 **Restrição de IA:** antes de propor qualquer agente de IA, confirme se o cliente **permite IA**.
 Há contratos que vetam, e propor agente nesses casos é perda de tempo e risco.

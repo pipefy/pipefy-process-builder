@@ -57,9 +57,10 @@ automações + agentes de IA + integrações iPaaS.
 6. **Agentes de IA** — tabela: `Nome | Fase(s) | Tipo (AI 2.0 / +IDP / +Websearch) | Entradas |
    Saídas | Observações de consumo`.
 7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
-   Entradas → saídas | Conexão (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo |
-   Estado esperado (rascunho / publicar após aprovação)`. Se não houver: "Nenhuma". Não registrar
-   credenciais, tokens nem URLs OAuth.
+   Entradas → saídas e procedência dos data pills (schema do pipe/piece/amostra) | Conexões requeridas
+   (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo | Estado esperado
+   (rascunho / publicar após aprovação)`. Se não houver: "Nenhuma". Não registrar credenciais,
+   tokens nem URLs OAuth.
 8. **Variações aplicadas** — decisões do decision_catalog escolhidas, e as recusadas relevantes.
 9. **Entregabilidade** — tabela: `Item | Marca (Nativo / Contorno / Manual na UI / Integração) |
    Observação`. Classifica cada item do spec quanto ao que a ferramenta consegue entregar, para o
@@ -101,9 +102,11 @@ pendências.
 3. **Automações e condicionais** — tabela: `Nome | id | Status (criada e verificada / criada sem
    verificação / não criada — motivo)`.
 4. **Agentes de IA** — tabela: `Nome | Status (configurado / parcial / manual pendente) | O que falta`.
-5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Conexão reutilizada (externalId) |
-   Validação | Teste (run_id/status ou não executado) | Publicação (rascunho/publicado/habilitado) |
-   Status | O que falta`. Não incluir segredo, token, URL OAuth ou payload sensível.
+5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Conexões reutilizadas (externalId) |
+   Data pills (shape_verified / shape_unverified) | Validação estrutural | Teste (run_id/status ou não
+   executado) | Publicação (rascunho/publicado/habilitado) | Status | O que falta`. Para conexão
+   ausente, inclua piece, finalidade e o link `https://app.pipefy.com/pipes/<pipe_id>/integrations`.
+   Não incluir segredo, token, URL OAuth ou payload sensível.
 6. **Desvios do spec** — diferença entre especificado e criado, com motivo. Se vazio: "Nenhum".
 7. **Pendências manuais obrigatórias** — o que precisa ser feito na UI para o processo funcionar,
    **começando pela ligação das fases** (origem → destino, na ordem do fluxo), quando aplicável.

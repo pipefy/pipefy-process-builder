@@ -16,8 +16,10 @@ agentes de IA.
 
 ## Conexões
 
-O builder trabalha em modo **reutilizar somente**. Antes de configurar passo que chama app externo,
-use a tool de listagem de conexões do catálogo e confira se há uma conexão compatível.
+O builder trabalha em modo **reutilizar somente**. Antes de configurar qualquer passo, levante
+**todas** as conexões exigidas pelo flow — inclusive a conexão Pipefy do trigger, além das conexões
+dos apps externos — e use a tool de listagem de conexões do catálogo para conferir se há uma
+conexão compatível para cada uma.
 
 Na porta C, o Planner faz esta pré-checagem de leitura antes da aprovação do spec, pois o pipe já
 existe. Na porta B, o Builder a executa imediatamente após criar o pipe, antes de qualquer passo
@@ -28,18 +30,32 @@ segredos, e exigem um fluxo de autorização próprio.
 - Havendo uma única conexão adequada, registre seu `externalId` no build e use-a.
 - Havendo mais de uma, apresente as opções ao consultor; não escolha silenciosamente.
 - Não havendo conexão adequada, não peça, aceite, armazene, crie nem rotacione credenciais. Registre
-  no `changes.md` a conexão/piece necessária e deixe o fluxo como parcial até que o responsável a
-  configure na UI ou por processo autorizado.
+  no `changes.md` a conexão/piece e a finalidade necessárias, deixe somente esse item como parcial e
+  dê o link acionável `https://app.pipefy.com/pipes/<pipe_id>/integrations` para o responsável
+  configurá-la na UI ou por processo autorizado. Sem todas as conexões requeridas, não construa um
+  flow "mock" como se ele funcionasse: entregue o blueprint dos passos e mapeamentos para retomada.
 - Nunca copie segredo, token, URL OAuth de retorno ou conteúdo sensível para arquivos de handoff.
 
 ## Ciclo de vida do fluxo
 
 1. **Descobrir.** Pesquise as pieces e leia os schemas de trigger, ações, conexões e opções que o
    spec exige. Use valores de opção, não rótulos, quando o catálogo os resolver.
+1.5 **Comprovar a origem dos data pills.** A regra vale para **todo** valor `{{...}}` que venha do
+   trigger ou da saída de qualquer step anterior, não apenas para o trigger. Para cada expressão,
+   registre se ela vem de (a) schema real do pipe/campo, (b) schema ou documentação da piece/action,
+   ou (c) amostra segura de execução. Campos Pipefy podem ser mapeados a partir da estrutura real do
+   pipe; isso não autoriza inferir o envelope da piece. Quando o caminho exato não estiver provado
+   pelo schema/documentação disponível, marque-o `shape_unverified` e pergunte ao consultor se pode
+   executar um teste controlado com card/evento para confirmá-lo. Não é obrigatório testar por rotina
+   quando a fonte já for comprovada; se o teste disparar escrita, mensagem ou outro efeito externo,
+   ele continua sujeito à aprovação específica e a dados descartáveis. Nunca publique flow que ainda
+   tenha expressão `shape_unverified`.
 2. **Construir rascunho.** Crie ou altere somente os flows e passos explicitamente aprovados no spec.
    Registre `flow_id`, trigger, pieces e status de validade retornado.
 3. **Validar.** Rode a tool de validação do flow antes de qualquer teste ou publicação. Falha de
-   validação deixa o item parcial; não publique.
+   validação deixa o item parcial; não publique. `ap_build_flow` ou `ap_validate_flow` aprovado
+   comprova somente a configuração estrutural dos steps, não que uma expressão `{{...}}` resolve no
+   payload runtime; use o estado de comprovação dos data pills para deixar isso explícito.
 4. **Testar.** Fluxo sem efeito externo pode ser testado após validação. Teste que possa enviar
    mensagem, gravar em sistema externo, criar registro ou disparar webhook exige aprovação explícita
    para aquele teste e dados descartáveis. Registre run id, entradas seguras, efeito esperado e
@@ -62,6 +78,7 @@ segredos, e exigem um fluxo de autorização próprio.
 ## Entrega
 
 Para cada integração, informe: nome e objetivo, pipe dono, `flow_id`, conexão reutilizada (sem
-segredo), status de validação, evidência de teste quando houver, estado de publicação e qualquer
-pendência humana. Link direto do flow/workspace só é informado quando a tool ou produto o retornar;
-nunca invente URL.
+segredo), situação dos data pills (`shape_verified` ou `shape_unverified`), status de validação,
+evidência de teste quando houver, estado de publicação e qualquer pendência humana. Para conexão
+ausente, informe o link de integrações do pipe; link direto do flow/workspace só é informado quando
+a tool ou produto o retornar, nunca invente URL.

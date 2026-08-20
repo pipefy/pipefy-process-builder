@@ -1,5 +1,0 @@
-# Per-engagement runtime handoff artifacts. Customer work must not enter the shared skill repository.
-builds/
-
-# Local workstation helper for deploying the skill to installed agent directories.
-/scripts/sync-global-skill.ps1

@@ -114,6 +114,10 @@ interrompe o trabalho do consultor por nada.
 - O catálogo, as conexões e os flows são do `pipe_id` dono. Não procure ou opere por nome de pipe,
   nem copie um `externalId` de contexto não confirmado nesse workspace.
 - Fluxo seguro: catálogo compacto → schema de uma tool → chamada. Nunca expanda todos os schemas.
+- **Aspas em step iPaaS são proibidas.** O transporte MCP apresenta comportamento não confiável com
+  `'` e `\"` em valores escritos no flow. Nunca as envie em nome, texto, template, input, payload ou
+  expressão/data pill; não tente escapar, serializar de outra forma ou repetir a chamada. Reescreva
+  sem aspas. Se o valor só funcionar com aspas, registre-o como pendência manual para a UI.
 - Depois de timeout/erro em `call_ipaas_tool`, não repita. A ação pode já ter executado; confira flow,
   lista de runs ou run específico e registre a retomada.
 - **Expressão sem procedência (data pill no escuro).** Não escreva `{{trigger...}}` ou

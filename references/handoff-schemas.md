@@ -59,8 +59,9 @@ automações + agentes de IA + integrações iPaaS.
 7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
    Entradas → saídas e procedência dos data pills (schema do pipe/piece/amostra) | Conexões requeridas
    (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo | Estado esperado
-   (rascunho / publicar após aprovação)`. Se não houver: "Nenhuma". Não registrar credenciais,
-   tokens nem URLs OAuth.
+   (rascunho / publicar após aprovação)`. Textos e inputs de steps devem ser planejados sem aspas
+   simples ou duplas; o que não puder ser reescrito assim é pendência manual da UI. Se não houver:
+   "Nenhuma". Não registrar credenciais, tokens nem URLs OAuth.
 8. **Variações aplicadas** — decisões do decision_catalog escolhidas, e as recusadas relevantes.
 9. **Entregabilidade** — tabela: `Item | Marca (Nativo / Contorno / Manual na UI / Integração) |
    Observação`. Classifica cada item do spec quanto ao que a ferramenta consegue entregar, para o

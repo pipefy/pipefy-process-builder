@@ -51,7 +51,12 @@ segredos, e exigem um fluxo de autorização próprio.
    ele continua sujeito à aprovação específica e a dados descartáveis. Nunca publique flow que ainda
    tenha expressão `shape_unverified`.
 2. **Construir rascunho.** Crie ou altere somente os flows e passos explicitamente aprovados no spec.
-   Registre `flow_id`, trigger, pieces e status de validade retornado.
+   Registre `flow_id`, trigger, pieces e status de validade retornado. **Limitação do transporte MCP:**
+   não envie aspas simples (`'`) nem duplas (`\"`) em nenhum valor escrito em step de flow — nome,
+   mensagem, template, campo de input, payload ou expressão/data pill. Não escape, não troque por
+   JSON e não repita a chamada para tentar contornar. Reescreva o texto e a expressão sem aspas; se
+   o valor exigir aspas para funcionar, deixe aquele input como pendência manual para configuração
+   na UI e registre o motivo no `changes.md`.
 3. **Validar.** Rode a tool de validação do flow antes de qualquer teste ou publicação. Falha de
    validação deixa o item parcial; não publique. `ap_build_flow` ou `ap_validate_flow` aprovado
    comprova somente a configuração estrutural dos steps, não que uma expressão `{{...}}` resolve no
@@ -68,6 +73,9 @@ segredos, e exigem um fluxo de autorização próprio.
 
 - `call_ipaas_tool` pode executar mesmo quando há timeout ou erro de transporte. Nunca repita a
   chamada às cegas: leia o flow, a lista de runs ou o run retornado antes de decidir a retomada.
+- Aspas simples e duplas em qualquer valor de step têm comportamento não confiável via MCP. Elas
+  são proibidas no build: não tente escapar ou serializar de outro modo; use uma formulação sem
+  aspas ou entregue o input como pendência manual da UI.
 - Delete, retry, publish, enable e qualquer alteração em app externo exigem intenção explícita do
   consultor. Não use essas ações como tentativa de correção.
 - Se uma integração cruzar pipes, fixe no spec qual `pipe_id` é dono do flow e quais pipes apenas

@@ -7,7 +7,8 @@ Dúvida ou lacuna no spec = parar e reportar, nunca adivinhar.
 
 Leia antes: `handoff-schemas.md` (seções 1 e 2), `graphql-recipes.md` (as receitas em lote — é o
 que decide se este build custa 5 dólares ou 40), `connector-rules.md`, `nomenclature.md` (todo
-nome que você criar segue o padrão, sem exceção) e `modeling_best_practices.md`.
+nome que você criar segue o padrão, sem exceção) e `modeling_best_practices.md`. Se o spec contiver
+integrações, leia também `ipaas.md`.
 
 Converse em português. Reporte progresso de forma tersa — sem palestras.
 
@@ -17,6 +18,9 @@ Converse em português. Reporte progresso de forma tersa — sem palestras.
    `review.md` com "Correções exigidas", **essa lista é o seu trabalho** — mexa somente nos itens
    listados, nada além. Se houver `changes.md` com status PARCIAL, retome do ponto registrado.
 3. **Não leia mais nada.** Nem a conversa do discovery, nem o brain. O spec é o mundo.
+4. Se o spec tiver integração iPaaS, confira que cada linha fixa pipe dono, trigger, pieces,
+   mapeamentos, conexão existente e estado esperado. Falta de conexão ou aprovação exigida não é
+   lacuna a ser resolvida por você: siga o handoff de `ipaas.md`.
 
 ## Economia (não é opcional)
 Cada chamada ao Pipefy reenvia o contexto inteiro ao modelo, então **o número de chamadas é o
@@ -34,6 +38,12 @@ configuração do pipe → verificação. Reporte os ids ao fim de cada etapa; s
 que existe e o que falta e continue de onde parou.
 
 1. **Criar o pipe** na org de destino confirmada no spec.
+   - Se o spec tiver integração iPaaS, faça agora a pré-checagem de conexão do `ipaas.md`, antes de
+     configurar qualquer passo: descubra a tool de listagem no catálogo desse novo `pipe_id`, liste
+     todas as conexões exigidas — inclusive Pipefy para o trigger — e registre os `externalId`s
+     reutilizados. Ausência de conexão deve virar pendência manual com piece, finalidade e o link
+     `https://app.pipefy.com/pipes/<pipe_id>/integrations`; entregue o blueprint para retomada, sem
+     criar flow mock, credencial ou rotação de conexão.
 2. **Clean slate:** remova as fases default (Inbox/Doing/Done) para o pipe conter exatamente as
    fases do spec — sequencie criação/remoção para o pipe nunca ficar sem fase; jamais delete fase
    com cards sem confirmação.
@@ -70,6 +80,15 @@ que existe e o que falta e continue de onde parou.
     **inutilizável**: estrutura completa, nenhum card andando. Use a leitura do passo 10 para
     confirmar quais fases estão sem saída e registre no changes, **em destaque**, a lista explícita
     de ligações a fazer na aba "Fluxo" da UI (origem → destino, na ordem do fluxo).
+12. **Integrações iPaaS (somente quando previstas).** Siga `ipaas.md`: confirme o catálogo no
+    `pipe_id` dono, expanda um schema por vez, use a conexão confirmada na pré-checagem (ou pare o
+    item como parcial se ela não existir), construa o rascunho e valide-o. Para cada data pill,
+    registre a fonte de evidência e marque `shape_unverified` quando o path não for comprovado;
+    pergunte antes de executar o teste controlado necessário e não publique enquanto houver essa
+    marca. Fluxo sem efeito externo pode ser testado após validar;
+    teste com efeito externo só ocorre após aprovação explícita registrada na conversa. Publicar ou
+    habilitar exige outra aprovação explícita; sem ela, deixe o flow como rascunho validado e pronto
+    para publicação. Registre flow_id, validação, run_id/status e estado de publicação no changes.
 
 Regras transversais das best practices: movimentos críticos por automação/botão (não arrasto
 manual); responsável em todo card; timezone correta em toda automação de SLA/prazo. O que
@@ -111,6 +130,11 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
    completa, senão você apaga as conexões existentes.
 6. Verifique também os `Manter`: nada além do especificado pode ter mudado. A query `AuditPipe`
    final cobre isso em 1 chamada.
+7. Para deltas iPaaS, antes de alterar o flow, faça a pré-checagem de conexão do `ipaas.md` no pipe
+   dono: liste as compatíveis, use a escolhida no spec ou peça decisão quando houver mais de uma.
+   Ausência de conexão compatível gera pendência manual com recomendação de criação e deixa o item
+   PARCIAL. Leia o estado atual do flow antes de alterar e, após erro ou timeout, inspecione flow/runs
+   antes de qualquer retomada. Não crie ou rotacione conexão.
 
 ## Saída
 1. Componha o `changes.md` exatamente no schema (seção 2 do handoff), com todos os ids, desvios,
@@ -138,6 +162,9 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
 - **Nunca repita uma escrita depois de erro ou timeout sem reler o estado real.** Erro pode ser
   falso-negativo: já houve resposta de falha numa operação que foi aplicada, e o retry duplicou 18
   cards de um cliente.
+- **iPaaS não recebe retry cego.** `call_ipaas_tool` pode ter executado o flow mesmo quando a resposta
+  falha ou expira; leia o flow, runs ou run específico antes de retomar. Delete, retry, publish,
+  enable e teste com efeito externo exigem intenção explícita, não são tentativas de correção.
 - **Verifique o que você escreveu.** Condicional, automação e agente de IA são objetos que já
   reportaram sucesso sem persistir. Reportar "criado e verificado" sem ter relido é o pior defeito
   possível neste papel: contamina o relatório de entrega e todos que confiam nele.

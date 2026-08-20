@@ -20,6 +20,14 @@ Each theme gives the question, suggested options, and what the answer informs.
 - Options: `Manual (formulário)` · `Via sistema externo (ERP/SAP)` · `Via iPaaS` · `Outro`
 - → Start form vs API entry; HTTP via the Service Account.
 
+Quando a resposta envolver sistema externo ou iPaaS, complete antes de aprovar o spec:
+- "Qual pipe será o dono do flow e qual evento o dispara?"
+- "Quais dados entram, quais passos/pieces transformam esses dados e qual resultado volta ao processo?"
+- "Já existe uma conexão autorizada para esse app?" Se houver mais de uma, peça o `externalId` ou
+  nome inequívoco; se não houver, registre a criação da conexão como pendência manual.
+- "O teste pode causar efeito externo?" Se sim, defina dados descartáveis e registre que o teste
+  exigirá aprovação explícita separada, assim como a publicação do flow.
+
 ## 3. Volume
 - "Qual o volume esperado?"
 - Options: `Até ~50/dia` · `~50–200/dia` · `200+/dia` · `Ainda não sei`

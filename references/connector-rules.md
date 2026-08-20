@@ -46,7 +46,7 @@ Tudo abaixo foi observado em builds reais ou verificado contra o schema.
 | Aplicar etiqueta por automação | A ação não existe no catálogo de automações |
 | Restringir quem cria card | `anyone_can_create_card` sem mutation |
 | Interfaces / Portais | Não há leitura do **layout atual**, então escrever elemento sem saber as posições produz tela bagunçada. Trate como fora de escopo e liste o que fazer na UI |
-| Encadear resposta de chamada HTTP | O corpo da resposta não fica disponível para outra automação decidir. Lógica "consulta base externa e decide" exige **iPaaS**, que não é acessível via API/MCP |
+| Encadear resposta de chamada HTTP | O corpo da resposta não fica disponível para outra automação decidir. Lógica "consulta base externa e decide" exige **iPaaS**; quando estiver no spec aprovado, siga `ipaas.md` em vez de tratá-la como pendência manual |
 
 > ⚠️ **A ligação das fases é a pendência mais importante de todas.** Um pipe novo nasce com toda a
 > estrutura pronta e **nenhum card conseguindo andar do início ao fim** — na prática, inutilizável
@@ -104,6 +104,34 @@ Se um card não move, a causa quase sempre é **campo obrigatório não preenchi
 uma restrição de fluxo. Antes de concluir que "o MCP está fora do ar" ou culpar a infraestrutura,
 verifique os campos obrigatórios da fase e `get_phase_allowed_move_targets`. Diagnóstico errado
 interrompe o trabalho do consultor por nada.
+
+### 4.6 iPaaS (Advanced Automations)
+
+- iPaaS é acessado pelas meta-tools `get_ipaas_tools`, `call_ipaas_tool`,
+  `get_ipaas_connection_auth_url` e `create_ipaas_connection`. Neste builder, use somente descoberta
+  e invocação necessárias ao flow aprovado; criação/rotação de conexão é fora de escopo. A existência
+  dessas tools no AI Toolkit não autoriza o Builder a receber credenciais ou criar conexões.
+- O catálogo, as conexões e os flows são do `pipe_id` dono. Não procure ou opere por nome de pipe,
+  nem copie um `externalId` de contexto não confirmado nesse workspace.
+- Fluxo seguro: catálogo compacto → schema de uma tool → chamada. Nunca expanda todos os schemas.
+- **Aspas em step iPaaS são proibidas.** O transporte MCP apresenta comportamento não confiável com
+  `'` e `"` em valores escritos no flow. Nunca as envie em nome, texto, template, input, payload ou
+  expressão/data pill; não tente escapar, serializar de outra forma ou repetir a chamada. Reescreva
+  sem aspas. Se o valor só funcionar com aspas, registre-o como pendência manual para a UI.
+- Depois de timeout/erro em `call_ipaas_tool`, não repita. A ação pode já ter executado; confira flow,
+  lista de runs ou run específico e registre a retomada.
+- **Expressão sem procedência (data pill no escuro).** Não escreva `{{trigger...}}` ou
+  `{{step_...}}` por analogia com outro webhook/piece. Para cada expressão, registre a evidência do
+  path: schema real do pipe, schema/documentação da piece/action ou amostra segura. Schema de campo
+  Pipefy não prova sozinho o envelope do trigger. Sem path comprovado, marque `shape_unverified`,
+  peça autorização para teste controlado se necessário e não publique o flow. Validação estrutural
+  não elimina essa pendência.
+- Conexão ausente bloqueia somente o trecho dependente, não o restante do build. Registre piece,
+  finalidade e o link `https://app.pipefy.com/pipes/<pipe_id>/integrations`; não crie um mock que
+  pareça flow funcional nem tente criar/rotacionar a conexão.
+- Validar rascunho não autoriza teste externo, nem comprova data pills. Testar externamente não
+  autoriza publicar. Publicar ou habilitar sem aprovação explícita é mudança indevida. Veja
+  `ipaas.md` para o ciclo completo.
 
 ## 5. Pipe clonado — risco de escrever no pipe errado
 

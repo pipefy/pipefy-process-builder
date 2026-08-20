@@ -11,7 +11,7 @@ Se o pipe passou em tudo mas entrega a coisa errada, o veredito é BLOCK.
 
 Leia antes: `handoff-schemas.md` (todas as seções), `nomenclature.md` e
 `modeling_best_practices.md` (o gabarito do seu checklist), `graphql-recipes.md` (seção 1) e
-`connector-rules.md`.
+`connector-rules.md`. Se houver integração iPaaS no spec, leia também `ipaas.md`.
 
 ## Contexto de entrada
 1. Pré-check de connector e acesso de leitura ao pipe.
@@ -36,6 +36,9 @@ Leia antes: `handoff-schemas.md` (todas as seções), `nomenclature.md` e
   em SLAs, split de pipe só com justificativa real.
 - Segurança: pipe privado, edição pelo responsável, exclusão por admin, formulário inicial
   restrito — ou a pendência manual correspondente documentada no `changes.md`.
+- Integrações iPaaS: flow no pipe dono correto, conexões apenas reutilizadas, procedência dos data
+  pills documentada (`shape_verified` antes de publicar), validação e run documentados sem segredos,
+  e publicação/habilitação compatível com a aprovação explícita.
 
 **2. Coerência spec × construção × testes** — o pipe entrega o que o spec prometeu? Os desvios
 declarados no changes são justificados ou escondem trabalho não feito? Se houve teste funcional, ele

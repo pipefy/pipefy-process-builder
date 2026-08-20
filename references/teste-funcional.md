@@ -12,7 +12,8 @@ gastando 25 turns por algo que já está feito e registrado. Sua pergunta é dif
 Você **não conserta nada**, nem "só esse campinho". Encontrou problema → registra. Consertar é do
 Builder, no ciclo seguinte.
 
-Leia antes: `handoff-schemas.md` (seções 1, 2 e 3) e `connector-rules.md`.
+Leia antes: `handoff-schemas.md` (seções 1, 2 e 3) e `connector-rules.md`. Se o spec incluir
+integração, leia também `ipaas.md`.
 
 ## Contexto de entrada
 1. Pré-check de connector e acesso de leitura/escrita ao pipe (`connector-rules.md`, regra 1).
@@ -21,6 +22,9 @@ Leia antes: `handoff-schemas.md` (seções 1, 2 e 3) e `connector-rules.md`.
    `conferencia.md` (o que já está verificado e o que ficou marcado como "não verificável nesta
    etapa" — essa lista é a sua pauta principal).
 3. O `pipe_id` está no frontmatter do `changes.md`.
+4. Para cada integração iPaaS, leia no spec o pipe dono, flow_id, efeito esperado e se a aprovação
+   explícita para teste com efeito externo foi registrada. Sem essa aprovação, limite-se à evidência
+   de validação/run já existente e marque o comportamento externo como não testável.
 
 ## Como testar
 
@@ -56,11 +60,19 @@ fornecedor ou cliente, notificação a stakeholder, webhook, integração. Na d�
 registre o caso na seção "Não testável" para validação humana. Um e-mail disparado para o
 fornecedor do cliente durante um teste é um incidente, não um bug encontrado.
 
+**iPaaS — teste de flow.** Depois de validar o draft, fluxo autocontido pode ser testado e ter seu
+run registrado. Flow que pode chamar app externo só é executado quando houver aprovação explícita
+para aquele teste e dados descartáveis definidos no spec ou na autorização. Use o run retornado e
+as tools de leitura de runs para conferir o resultado; não repita uma chamada após timeout nem use
+retry sem intenção explícita. Nunca publique ou habilite flow como parte do teste.
+
 ## Saída
 1. **Limpeza primeiro:** exclua ou arquive o card de teste e confirme no relatório. Card de teste
    esquecido em pipe de cliente é rastro que vira pergunta depois.
 2. Escreva `test-results.md` na pasta de trabalho (formato na seção 3 de `handoff-schemas.md`,
-   **sem** a seção de auditoria estrutural — ela vive no `conferencia.md`).
+   **sem** a seção de auditoria estrutural — ela vive no `conferencia.md`). Para iPaaS, registre
+   flow_id/run_id, ação, efeito esperado, resultado e se o teste externo foi aprovado; nunca dados
+   sensíveis ou payloads de terceiros.
 3. `resultado: PASS` só se nenhum caso funcional falhou. Qualquer falha = `FAIL`.
 4. Mensagem final ao orquestrador: PASS/FAIL, número de casos, número de falhas, uma linha por
    falha, e onde salvou o arquivo.
@@ -77,3 +89,5 @@ Registre no arquivo que foi rodada incremental e mantenha as falhas ainda aberta
   vai anotado para o review, não silenciado.
 - Não invente caso de teste fora do spec. Se achar que falta cobertura, registre como observação.
 - Siga `connector-rules.md`: tudo escopado por `pipe_id`, sem busca global.
+- Não crie/rotacione conexão iPaaS, não publique/habilite flow e não execute teste externo sem a
+  aprovação explícita exigida por `ipaas.md`.

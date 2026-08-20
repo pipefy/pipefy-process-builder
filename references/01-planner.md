@@ -7,7 +7,7 @@ Quem constrói é o Builder, lendo só o seu spec. Por isso o spec precisa ser e
 contexto além dele mesmo.
 
 Leia antes: `handoff-schemas.md` (seção 1 — o contrato do spec), `brain-access.md` (como consultar
-o conhecimento) e `connector-rules.md`. Conforme a porta, use `discovery_questions.md`,
+o conhecimento), `connector-rules.md` e, se houver integração no escopo, `ipaas.md`. Conforme a porta, use `discovery_questions.md`,
 `decision_catalog.md` e `golden_standard_schema.md`.
 
 Converse em português. Seja consultivo, educado e conciso — guie nas boas práticas de adoção
@@ -44,11 +44,24 @@ Rode o **fit-check** e diga com franqueza o que não cabe: fluxo de fase única,
 controle de estoque/agenda/ponto, race condition externa em tempo real, substituição de ERP. Some a
 isso um limite que aparece muito e decepciona tarde: **lógica que consulta uma base externa por HTTP
 e decide com base na resposta não é construível por automação** — o corpo da resposta não fica
-disponível para a automação seguinte. Esse caminho exige iPaaS, que é configuração manual fora do
-alcance da ferramenta. Sinalize no discovery, não no meio do build.
+disponível para a automação seguinte. Esse caminho exige iPaaS. Quando entrar no escopo aprovado,
+desenhe-o no spec e siga `ipaas.md`; não o descubra no meio do build.
 
 **Vocabulário do cliente:** quando o consultor disser "integração", ele quase sempre quer dizer
 **iPaaS** — não automação nem agente de IA. Confirme o sentido antes de seguir.
+
+**Discovery de integração (somente se houver integração no escopo):** fixe qual pipe será dono do
+flow, sistema/piece externo, trigger, passos, campos de entrada e saída, comportamento de erro,
+efeito externo do teste e estado desejado. Em uma porta C, depois de confirmar o pipe alvo, faça a
+pré-checagem somente de leitura: descubra a tool de listagem de conexões no catálogo iPaaS e confira
+as conexões exigidas por **cada** piece, inclusive a conexão Pipefy do trigger. Registre no spec os
+`externalId`s escolhidos. Mais de uma opção exige escolha explícita do consultor; nenhuma opção vira
+pendência manual, com piece/finalidade e o link
+`https://app.pipefy.com/pipes/<pipe_id>/integrations` para criação antes da retomada. Em uma porta B,
+o pipe/workspace ainda não existe: registre `conexões a confirmar após criação do pipe` e delegue a
+mesma checagem ao Builder logo após a criação. Em ambos os casos, não receba credencial nem
+crie/rotacione conexão. O spec também deve registrar que publicar/habilitar dependerá de aprovação
+explícita posterior.
 
 **Restrição de IA:** antes de propor qualquer agente de IA, confirme se o cliente **permite IA**.
 Há contratos que vetam, e propor agente nesses casos é perda de tempo e risco.
@@ -113,7 +126,7 @@ Rode o desenho aprovado contra `connector-rules.md` (seção 4) e classifique **
 | **Nativo** | A ferramenta configura sozinha |
 | **Contorno** | Configurável, mas por caminho alternativo (ex.: segurança do pipe via GraphQL) |
 | **Manual na UI** | A API não faz; alguém vai configurar à mão no Pipefy |
-| **Integração** | Exige iPaaS ou sistema externo, fora do alcance da ferramenta |
+| **Integração** | Exige iPaaS ou sistema externo; iPaaS aprovado é construível, mas conexão nova e publicação ainda seguem seus portões |
 
 Isso vai na seção de entregabilidade do spec **e no resumo executivo**, porque muda a conversa com o
 cliente. Hoje essas limitações só aparecem durante a construção, e a surpresa cai no colo do

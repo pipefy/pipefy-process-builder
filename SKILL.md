@@ -10,7 +10,7 @@ description: >-
 
 # Pipefy Process Builder — orquestrador
 
-**Versão 2.0 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
+**Versão 3.0 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
 antigas convivendo com esta causam comportamento imprevisível, e saber a versão é o primeiro passo
 para diagnosticar. Se você notar sinal de duplicata (outra skill de Pipefy disparando junto, ou
 menção ao pipe de controle "Process Builds"), avise o consultor para limpar as versões antigas.

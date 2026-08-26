@@ -4,7 +4,28 @@ Estas queries existem por um motivo medido: **o custo de uma operação no Pipef
 da tool, é o contexto inteiro reenviado a cada chamada** (~45–60 mil tokens de schemas do conector
 por turn). Ler um pipe pelo padrão ingênuo (`get_pipe` + `get_phase_fields` por fase + condicionais
 por fase) custa **25 chamadas**; a query abaixo faz o mesmo em **1**. Use estas receitas sempre que
-puder — e nunca introspecte o schema em runtime: as formas abaixo já foram validadas contra a API.
+puder.
+
+> ## Antes de escrever qualquer mutation, leia isto
+>
+> As **queries de leitura** deste arquivo podem ser reusadas direto: elas são exercitadas em todo
+> build e falham alto quando erram.
+>
+> **Mutation é outra história.** Um exemplo de mutation aqui — ou em qualquer lugar — **não é
+> autoridade sobre o schema**. Nome de campo de input do Pipefy mistura `snake_case` e
+> `camelCase` sem padrão, inclusive dentro do mesmo input, e um nome errado passa pela sua
+> revisão sem chamar atenção. Portanto, **antes do primeiro uso de uma mutation num build**:
+>
+> 1. Introspecte o input dela (`introspect_mutation`) **e o tipo de item de cada lista** que ela
+>    receba (`introspect_type`) — o erro mora justamente aí, um nível abaixo do input principal,
+>    onde a introspecção do input não chega.
+> 2. Confira nome **e cardinalidade** de cada campo: um campo que é `LIST` recusa valor simples.
+> 3. Registre a forma confirmada no `changes.md` junto da decisão fechada.
+>
+> É **uma** chamada de leitura por mutation por build. Custa menos que um build que passa na
+> validação estrutural e falha em execução — que foi o que já aconteceu: uma mutation escrita a
+> partir de exemplo, com dois nomes de campo errados e uma cardinalidade errada, chegou a flow
+> publicado sem ninguém notar.
 
 > **Nunca** passe `include_parsed=True` no `execute_graphql`: ele devolve o payload duplicado
 > (string `result` + dict `data`) e infla o contexto sem nenhum ganho.

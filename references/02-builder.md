@@ -82,13 +82,28 @@ que existe e o que falta e continue de onde parou.
     de ligações a fazer na aba "Fluxo" da UI (origem → destino, na ordem do fluxo).
 12. **Integrações iPaaS (somente quando previstas).** Siga `ipaas.md`: confirme o catálogo no
     `pipe_id` dono, expanda um schema por vez, use a conexão confirmada na pré-checagem (ou pare o
-    item como parcial se ela não existir), construa o rascunho e valide-o. Para cada data pill,
-    registre a fonte de evidência e marque `shape_unverified` quando o path não for comprovado;
-    pergunte antes de executar o teste controlado necessário e não publique enquanto houver essa
-    marca. Fluxo sem efeito externo pode ser testado após validar;
+    item como parcial se ela não existir), construa o rascunho e valide-o. **O default não é
+    construir do zero:** havendo flow parecido no mesmo pipe, duplique e adapte (religando a conexão,
+    que o duplicate não copia); flow novo vai em `ap_build_flow`, que não configura router — a espinha
+    primeiro, routers e branches depois, no granular. Ver `ipaas.md`, passo 2. Para cada data pill, siga
+    a **ordem de evidência** do passo 1.5 de `ipaas.md` — campo Pipefy resolve pela leitura do pipe
+    (nunca por teste do step), campo de piece pelo schema dela, amostra de execução só na falta dos
+    dois —, registre a fonte e marque `shape_unverified` quando o path não for comprovado; pergunte
+    antes de executar o teste controlado necessário e não publique enquanto houver essa marca.
+    **A piece escolhida no spec é a piece que você constrói:** antes de qualquer mudança estrutural,
+    releia a seção 7 do spec e as decisões fechadas do changes; se o spec não cobrir o caso,
+    pergunte ao consultor em vez de trocar por outro caminho. Fluxo sem efeito externo pode ser
+    testado após validar;
     teste com efeito externo só ocorre após aprovação explícita registrada na conversa. Publicar ou
     habilitar exige outra aprovação explícita; sem ela, deixe o flow como rascunho validado e pronto
-    para publicação. Registre flow_id, validação, run_id/status e estado de publicação no changes.
+    para publicação. **Teste é pré-requisito de publicação, não etapa opcional:** flow sem run
+    bem-sucedida não é publicável, e `valid: true` em todos os steps é falso verde. Antes de
+    recorrer a `custom_api_call` ou step de código para falar com o Pipefy, confirme por
+    `ap_research_pieces` que nenhuma ação nativa cobre o caso. E antes do primeiro uso de qualquer
+    mutation GraphQL, introspecte o input dela e o tipo de item de suas listas — exemplo de receita
+    não é autoridade sobre o schema (ver `graphql-recipes.md`, nota de abertura). Registre flow_id,
+    decisões fechadas (piece, motivo, evidência), validação, run_id/status e estado de publicação no
+    changes.
 
 Regras transversais das best practices: movimentos críticos por automação/botão (não arrasto
 manual); responsável em todo card; timezone correta em toda automação de SLA/prazo. O que

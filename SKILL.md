@@ -10,7 +10,7 @@ description: >-
 
 # Pipefy Process Builder — orquestrador
 
-**Versão 2.0 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
+**Versão 3.1 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
 antigas convivendo com esta causam comportamento imprevisível, e saber a versão é o primeiro passo
 para diagnosticar. Se você notar sinal de duplicata (outra skill de Pipefy disparando junto, ou
 menção ao pipe de controle "Process Builds"), avise o consultor para limpar as versões antigas.
@@ -139,6 +139,14 @@ quantidade de chamadas. Portanto:
 - Siga `references/connector-rules.md` em toda operação MCP — em especial a **seção 4**, que registra
   os limites e armadilhas já conhecidos. Consultar aquela seção antes de tentar algo economiza as
   tentativas em vazio que são a maior fonte de custo e frustração.
+- **O schema vem antes do teste.** A estrutura de um pipe — fases, campos, tipos — é inteiramente
+  conhecível por leitura, antes de montar qualquer step ou automação. Descobrir por tentativa e erro
+  o que uma leitura já responde é a via mais curta para o timeout. Vale sobretudo em iPaaS: a ordem
+  de evidência para data pills está em `references/ipaas.md`, passo 1.5.
+- **Decisão de arquitetura mora em arquivo, não na conversa.** Piece, step ou caminho já fechado
+  está no `spec.md` e nas decisões fechadas do `changes.md` — releia o arquivo em vez de replanejar,
+  e não troque um caminho aprovado por hipótese não comprovada. Se o spec não cobrir o caso,
+  pergunte ao consultor. É isso que faz o trabalho sobreviver a timeout ou reconexão do conector.
 - **Nunca diga "pronto" ou "resolvido" sem dizer o que foi feito.** Toda confirmação descreve o
   concreto: qual gatilho, qual ação, quais campos, em qual fase. Quem lê precisa saber o que
   conferir no Pipefy, sem perguntar de novo.
@@ -152,7 +160,10 @@ quantidade de chamadas. Portanto:
   conexão nova/rotação de credencial continua fora do escopo e vira handoff explícito.
 - **iPaaS tem três portões distintos:** aprovação do spec para criar/alterar rascunho, aprovação
   específica para teste com efeito externo e aprovação específica para publicar/habilitar. Nunca
-  considere um deles implícito nos outros.
+  considere um deles implícito nos outros. Além das aprovações, publicar tem um **pré-requisito
+  técnico**: run bem-sucedida. Flow com zero runs não é publicável, e `valid: true` em todos os
+  steps não substitui isso — validação estrutural confere que os steps estão configurados, nunca
+  que os dados atravessam.
 - **Agente de IA só entra se for pedido.** Há clientes que vetam IA por contrato. Nunca comece a
   montar um agente sem pedido explícito.
 - **Um pipe é identificado por id, nunca por nome.** Rótulos e slugs se repetem entre pipes — em

@@ -62,6 +62,15 @@ Tudo abaixo foi observado em builds reais ou verificado contra o schema.
 - **Condição de disparo da automação:** `get_automations` omite o campo `condition`. A query da
   seção 5 de `graphql-recipes.md` traz. Isso já causou reprovação indevida de um build inteiro.
 - **Lote de valores de campo de card:** existe `updateFieldsValues` — seção 7 de `graphql-recipes.md`.
+- **`getCardById` já devolve os campos customizados.** O step da piece Pipefy retorna **todos** os
+  campos do card, customizados incluídos, indexados por fase e por slug:
+  `data.card.fields_by_phase.<fase>.fields.<slug>.<propriedade>`, com os metadados `field`/
+  `phase_field` e a propriedade de valor correspondente ao tipo. Comprovado em flows de produção.
+  Não hipotetize limitação de leitura de campo nem troque a piece por `custom_api_call` "para
+  garantir" — `custom_api_call` é legítimo para o que a piece não cobre (mutation ausente do
+  catálogo, por exemplo), não como contorno de limitação que você não comprovou por leitura real.
+  Note que ele embrulha a resposta num nível `body` a mais que as ações nativas. O mapa
+  `FieldTypeId` → propriedade e o envelope de cada step estão em `ipaas.md`, passo 1.5.
 
 ### 4.3 Armadilhas de escrita — verifique **depois** de escrever
 
@@ -114,18 +123,26 @@ interrompe o trabalho do consultor por nada.
 - O catálogo, as conexões e os flows são do `pipe_id` dono. Não procure ou opere por nome de pipe,
   nem copie um `externalId` de contexto não confirmado nesse workspace.
 - Fluxo seguro: catálogo compacto → schema de uma tool → chamada. Nunca expanda todos os schemas.
-- **Aspas em step iPaaS são proibidas.** O transporte MCP apresenta comportamento não confiável com
-  `'` e `"` em valores escritos no flow. Nunca as envie em nome, texto, template, input, payload ou
-  expressão/data pill; não tente escapar, serializar de outra forma ou repetir a chamada. Reescreva
-  sem aspas. Se o valor só funcionar com aspas, registre-o como pendência manual para a UI.
+- **Aspas: proibidas em texto livre, obrigatórias em data pill.** A regra tem dois lados, e
+  confundi-los paralisa o build. Em **valor de texto livre** — nome de step, mensagem, template,
+  assunto, corpo de e-mail, texto de payload — não envie `'` nem `"`: o transporte MCP tem
+  comportamento não confiável com eles; reescreva sem aspas e, se o valor só funcionar com aspas,
+  registre-o como pendência manual da UI. Em **expressão/data pill** é o contrário: a forma
+  canônica é `{{step_3['output']['data']['campo']}}`, com aspas simples e notação de colchete, e
+  **é a única forma aceita** — todo flow de produção usa exclusivamente ela. O mesmo vale para o
+  **JavaScript de um step de código**, que é escrito com aspas normalmente. Não tente "consertar"
+  uma expressão removendo as aspas: isso produz data pill que não resolve.
 - Depois de timeout/erro em `call_ipaas_tool`, não repita. A ação pode já ter executado; confira flow,
   lista de runs ou run específico e registre a retomada.
 - **Expressão sem procedência (data pill no escuro).** Não escreva `{{trigger...}}` ou
-  `{{step_...}}` por analogia com outro webhook/piece. Para cada expressão, registre a evidência do
-  path: schema real do pipe, schema/documentação da piece/action ou amostra segura. Schema de campo
-  Pipefy não prova sozinho o envelope do trigger. Sem path comprovado, marque `shape_unverified`,
-  peça autorização para teste controlado se necessário e não publique o flow. Validação estrutural
-  não elimina essa pendência.
+  `{{step_...}}` por analogia com outro webhook/piece. Para cada expressão, siga a **ordem de
+  evidência** do passo 1.5 de `ipaas.md` — campo Pipefy resolve pela leitura do pipe, campo de piece
+  pelo schema dela, amostra de execução só na falta dos dois — e registre no changes qual dessas
+  fontes provou o path. Schema de campo Pipefy não prova sozinho o envelope de uma piece externa.
+  Sem path comprovado, marque `shape_unverified`, peça autorização para teste controlado se
+  necessário e não publique o flow. Validação estrutural não elimina essa pendência.
+  **O que é derivável do schema nunca se descobre por execução:** repetir teste de step para
+  descobrir quais propriedades existem é a via mais curta para o timeout.
 - Conexão ausente bloqueia somente o trecho dependente, não o restante do build. Registre piece,
   finalidade e o link `https://app.pipefy.com/pipes/<pipe_id>/integrations`; não crie um mock que
   pareça flow funcional nem tente criar/rotacionar a conexão.

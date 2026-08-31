@@ -34,28 +34,38 @@ puder.
 
 ## 1. Auditoria estrutural completa — 1 chamada
 
-Traz pipe, preferências de segurança, formulário inicial, todas as fases com todos os campos
-(rótulo, tipo, obrigatoriedade, opções, ordem) e as condicionais ancoradas em cada fase. É a
-leitura que serve à conferência, ao diagnóstico e ao review.
+Traz pipe, preferências de segurança, formulário inicial (com o id da fase oculta que o abriga),
+campo de título, webhooks, conexões com outros pipes, todas as fases com todos os campos (rótulo,
+tipo, obrigatoriedade, opções, ordem) e as condicionais com regra e ações completas. É a leitura
+que serve à conferência, ao diagnóstico e ao review. *(Query exercitada ao vivo em 2026-08-31,
+incluindo os campos novos da v3.2.)*
 
 ```graphql
 query AuditPipe($id: ID!) {
   pipe(id: $id) {
     id name uuid public
+    startFormPhaseId
+    title_field { id internal_id label }
     only_admin_can_remove_cards
     only_assignees_can_edit_cards
     expiration_time_by_unit
     expiration_unit
     countOnlyWeekDays
     labels { id name }
+    parentsRelations { id name }
+    childrenRelations { id name }
+    webhooks { id name url actions }
     start_form_fields { id internal_id label type required options }
-    startFormFieldConditions { id name }
+    fieldConditions {
+      id name
+      condition { expressions_structure expressions { structure_id field_address operation value } }
+      actions { actionId whenEvaluator phase { id name } phaseField { id internal_id label } }
+    }
     phases {
       id name index done description
       next_phase_ids
       cards_can_be_moved_to_phases { id name }
       fields { id internal_id label type required editable options description index }
-      fieldConditions { id name }
     }
   }
 }
@@ -64,15 +74,27 @@ query AuditPipe($id: ID!) {
 Variáveis: `{"id": "<pipe_id>"}`.
 
 **O que ela já responde sozinha:** fases (nomes, ordem, done), campos por fase com tipo e
-obrigatoriedade, opções de select, condicionais **e em que fase cada uma está ancorada** (o
-aninhamento revela condicional na fase errada — o erro mais comum), movimentos permitidos entre
-fases, e os defaults de segurança do pipe.
+obrigatoriedade, opções de select, movimentos permitidos entre fases, defaults de segurança,
+campo de título, conexões com outros pipes, webhooks (o rastro de integrações externas) e **as
+condicionais com a regra completa** — expressões (campo, operação, valor) e ações (qual campo
+esconde/mostra, em que fase, em qual ramo).
+
+Três pontos desta query evitam diagnósticos errados que já aconteceram (tudo verificado ao vivo):
+
+- **`startFormPhaseId` é o id da fase virtual do formulário inicial.** O Pipefy modela o start
+  form como uma fase oculta que **nunca aparece em `phases`**. É nela que os campos da "Fase 0"
+  do spec são criados, e é o `phase_id` que a criação de condicional espera. Não deduza esse id
+  (já se adivinhou "id da primeira fase − 1") — ele está aqui.
+- **Não leia ancoragem de condicional pelo aninhamento em fase.** `phases[].fieldConditions`
+  volta vazio mesmo em pipe cheio de condicionais, e o atributo `phase` de toda condicional
+  aponta para a fase Start form — é indexação da plataforma, não defeito. A ancoragem real está
+  nas **ações**: `actions[].phaseField` diz o campo afetado, `actions[].phase` a fase, e
+  `whenEvaluator` o ramo (if-true/if-false).
+- **`title_field` mostra o campo de título atual** — a leitura par da mutation da seção 6.
 
 **O que ela não traz** (some 2 chamadas, não 24):
-- Automações → `get_automations(pipe_id=...)`.
+- Automações → a query da **seção 5** (com a condição de disparo, que `get_automations` omite).
 - Agentes de IA → `get_ai_agents(repo_uuid=...)` (só quando o spec previr agentes).
-- Detalhe da regra de uma condicional → `get_field_condition(<id>)`, e **só** para a condicional
-  que estiver sob suspeita, nunca para todas.
 
 Então uma auditoria completa custa **2 a 3 chamadas**. Se você se pegar chamando
 `get_phase_fields` em loop, pare: você está pagando 25 turns por algo que custa 1.
@@ -122,6 +144,10 @@ mutation CriarFases {
 
 `CreatePhaseInput`: `pipe_id`, `name`, `index`, `done`, `description`, `lateness_time`,
 `can_receive_card_directly_from_draft`, `only_admin_can_move_to_previous`.
+
+> **`create_pipe` ignora o parâmetro `phases` silenciosamente** — o pipe nasce com as 3 fases
+> default em português, sem nenhum aviso. Não passe fases na criação: crie-as aqui em lote e
+> remova as default na sequência (o clean slate do Builder).
 
 **Limite de lote:** cerca de **30 campos por chamada**. Acima disso a chamada falha. Quebre em
 blocos de ~20 para ter margem — e quebrar por fase já ajuda a isolar erro.
@@ -191,13 +217,19 @@ mutation ConfigurarPipe($id: ID!) {
     public_form: false
     only_assignees_can_edit_cards: true
     only_admin_can_remove_cards: true
-    title_field_id: "<internal_id do campo que deve virar o título>"
-  }) { pipe { id public only_assignees_can_edit_cards only_admin_can_remove_cards } }
+    title_field_id: "<SLUG do campo — o id textual, ex.: nome>"
+  }) { pipe { id public only_assignees_can_edit_cards only_admin_can_remove_cards title_field { id } } }
 }
 ```
 
 `title_field_id` resolve o efeito de "título do card trocado sozinho": por default o Pipefy usa o
 primeiro campo como título, então aponte explicitamente qual campo deve ser o título.
+
+> ⚠️ **`title_field_id` aceita somente o slug do campo** (o `id` textual, ex.: `nome`), **nunca o
+> `internal_id` numérico** — com internal_id a mutation falha com `Field not found with id: ...`.
+> É uma inconsistência real do schema (o resto endereça campo por `internal_id`), tropeçada em
+> três builds independentes e verificada ao vivo. O campo de título atual é legível por
+> `title_field` na query da seção 1.
 
 **O que realmente não existe:** `description` não está em `UpdatePipeInput` — a descrição do pipe
 é a única parte que continua pendência manual na UI.
@@ -231,3 +263,9 @@ releia antes de repetir.
 
 > Se a forma de `values` recusar, valide com a técnica da seção 4 e introspecte
 > `__type(name: "UpdateFieldsValuesInput")` uma única vez.
+
+> **Anexo tem formato diferente em cada mutation:** aqui em `updateFieldsValues`, o valor de um
+> campo de anexo é **string simples** com o `storage_path`; em `createCard`,
+> `fields_attributes[].field_value` é **LIST** (`["valor"]`) para qualquer tipo de campo, anexo
+> incluído — e errar esse formato devolve a mensagem enganosa "campo obrigatório não preenchido".
+> O fluxo completo de upload está em `connector-rules.md`, seção 4.8.

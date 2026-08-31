@@ -59,8 +59,10 @@ automações + agentes de IA + integrações iPaaS.
 7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
    Entradas → saídas e procedência dos data pills (schema do pipe/piece/amostra) | Conexões requeridas
    (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo | Estado esperado
-   (rascunho / publicar após aprovação)`. Textos e inputs de steps devem ser planejados sem aspas
-   simples ou duplas; o que não puder ser reescrito assim é pendência manual da UI. Se não houver:
+   (rascunho / publicar após aprovação)`. Os **textos livres** de step (nome, mensagem, template)
+   devem ser planejados sem aspas simples ou duplas; o que não puder ser reescrito assim é pendência
+   manual da UI. Isso **não** vale para data pill: expressão se escreve na forma canônica
+   `{{step_3['output']['data']['campo']}}`, com aspas simples. Se não houver integração:
    "Nenhuma". Não registrar credenciais, tokens nem URLs OAuth.
 8. **Variações aplicadas** — decisões do decision_catalog escolhidas, e as recusadas relevantes.
 9. **Entregabilidade** — tabela: `Item | Marca (Nativo / Contorno / Manual na UI / Integração) |
@@ -103,11 +105,21 @@ pendências.
 3. **Automações e condicionais** — tabela: `Nome | id | Status (criada e verificada / criada sem
    verificação / não criada — motivo)`.
 4. **Agentes de IA** — tabela: `Nome | Status (configurado / parcial / manual pendente) | O que falta`.
-5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Conexões reutilizadas (externalId) |
-   Data pills (shape_verified / shape_unverified) | Validação estrutural | Teste (run_id/status ou não
-   executado) | Publicação (rascunho/publicado/habilitado) | Status | O que falta`. Para conexão
+5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Decisões fechadas | Conexões
+   reutilizadas (externalId) | Data pills (shape_verified / shape_unverified) | Validação estrutural |
+   Teste (run_id/status ou não executado) | Publicação (rascunho/publicado/habilitado) | Status |
+   O que falta`. **Decisões fechadas** registra, por flow, cada escolha de piece/step já decidida no
+   formato `piece ou step escolhido (+ versão) | motivo | evidência (leitura do pipe, schema da piece
+   ou run que comprovou)` — ex.: `getCardById v0.2.0 | devolve fields_by_phase completo, sem
+   custom_api_call | leitura do pipe`. A versão da piece entra porque envelope e inputs mudam entre
+   versões, e um mesmo projeto costuma ter várias em uso ao mesmo tempo. Esta coluna existe porque a
+   conversa não sobrevive a timeout ou reconexão do connector, e decisão perdida volta como
+   retrabalho: o arquivo é a memória arquitetural do flow.
+   Decisão registrada aqui não se reabre sem o consultor (ver `ipaas.md`, passo 2). Para conexão
    ausente, inclua piece, finalidade e o link `https://app.pipefy.com/pipes/<pipe_id>/integrations`.
-   Não incluir segredo, token, URL OAuth ou payload sensível.
+   Não incluir segredo, token, URL OAuth ou payload sensível. **`shape_verified` exige run:** só
+   marque assim o que tem run com id e status de sucesso cuja saída confere com o spec — sem run,
+   a marca é `shape_unverified`, e flow com essa marca não é publicável.
 6. **Desvios do spec** — diferença entre especificado e criado, com motivo. Se vazio: "Nenhum".
 7. **Pendências manuais obrigatórias** — o que precisa ser feito na UI para o processo funcionar,
    **começando pela ligação das fases** (origem → destino, na ordem do fluxo), quando aplicável.

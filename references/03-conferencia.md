@@ -43,7 +43,11 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
      flow e validar: `flow_id`, trigger, steps/pieces, conexões reutilizadas por `externalId`, estado
      de validação, situação dos data pills e estado de publicação. Flow publicado/habilitado sem
      aprovação explícita registrada no changes, ou com data pill `shape_unverified`, é divergência
-     alta. Conexão ausente ou pendência manual corretamente registrada com link de integrações não é
+     alta. **Confirme a run por `ap_list_runs`, não pelo que o changes afirma:** flow publicado com
+     zero runs é divergência alta, e `valid: true` em todos os steps não conta como evidência de
+     que os dados atravessam. Step com `skip: true` existe, valida e nunca executa — se o spec
+     previa aquele step, é divergência. Conexão ausente ou pendência manual corretamente registrada
+     com link de integrações não é
      divergência; ausência desse registro é.
    - **Desvios declarados** — os que o changes já registrou não são novidade: confirme que são
      exatamente esses e nada além.

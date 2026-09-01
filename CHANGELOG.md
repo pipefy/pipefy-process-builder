@@ -12,8 +12,8 @@ aplicada à própria documentação do conector. Com um limite que a própria ro
 por API prova criação e leitura, **não** comportamento de renderização na UI (ver o item de
 conteúdo dinâmico abaixo).
 
-As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram consolidadas em
-`feedback/mcp-engineering-2026-08.md`, para encaminhamento à engenharia.
+As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram consolidadas num
+documento à parte, entregue fora do repositório para encaminhamento à engenharia.
 
 ### Corrigido
 - **`title_field_id` aceita somente o slug do campo, não o `internal_id`.** A receita da seção 6

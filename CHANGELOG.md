@@ -2,12 +2,15 @@
 
 ## [3.2.0] — 2026-08-31 — a rodada dos relatórios de campo
 
-Primeira rodada alimentada por uso real em escala: nove relatórios de builds e diagnósticos de
+Primeira rodada alimentada por uso real em escala: dez relatórios de builds e diagnósticos de
 consultores (Onboarding PJ/PF, Siniestros Chile, Bemol CGI Garantias, AON Endoso, Ecom Energia,
-POC de compras, agentes com MCP tools, Firmas e Poderes, campo dinâmico) mais dois feedbacks
-estruturados. Toda mudança de query e as afirmações de schema mais arriscadas foram **validadas ao
-vivo** contra um pipe de testes antes de entrar nos arquivos — a régua que a 3.1 criou para o iPaaS
-("teste como portão") aplicada à própria documentação do conector.
+POC de compras, agentes com MCP tools, Firmas e Poderes, campo dinâmico, e a investigação de
+statement/conteúdo dinâmico por engenharia reversa) mais dois feedbacks estruturados. Toda mudança
+de query e as afirmações de schema mais arriscadas foram **validadas ao vivo** contra um pipe de
+testes antes de entrar nos arquivos — a régua que a 3.1 criou para o iPaaS ("teste como portão")
+aplicada à própria documentação do conector. Com um limite que a própria rodada expôs: validação
+por API prova criação e leitura, **não** comportamento de renderização na UI (ver o item de
+conteúdo dinâmico abaixo).
 
 As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram consolidadas em
 `feedback/mcp-engineering-2026-08.md`, para encaminhamento à engenharia.
@@ -32,10 +35,16 @@ As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram co
   "condicional no formulário inicial" como defeito. A ancoragem real está nas **ações**
   (`actions[].phase`/`phaseField`), agora lidas pela própria query de auditoria; `diagnostico.md`,
   `02-builder.md` e `03-conferencia.md` foram reescritos nesse modelo.
-- **"Campo dinâmico" não é `statement`.** Pedido de conteúdo dinâmico construído como `statement`
-  gerou campos que a API confirma e a UI não renderiza (2 relatos; um exigiu recriação manual de
-  todos). O tipo correto é **`dynamic_content`** — validado ao vivo por criação, releitura e
-  remoção. O defeito de renderização do `statement` via API fica registrado como armadilha.
+- **Conteúdo dinâmico: o tipo é `statement` com receita exata — e `dynamic_content` é armadilha.**
+  Dois relatos iniciais apontavam campos `statement` invisíveis ou quebrados na UI, o que sugeria
+  trocar de tipo; a investigação por engenharia reversa (campo criado na UI, lido pela API,
+  replicado atributo a atributo) fechou a causa real: o tipo certo **é** `statement`, mas exige
+  conteúdo na `description` (não em valor de card), token `{{phase<id>.field<internal_id>}}` dentro
+  do envelope HTML exato do editor, e label no padrão `Statement-<uuid>` — sem isso o campo vira
+  long-text editável ou mostra o token literal. Já `dynamic_content`, o tipo de nome óbvio (criável
+  e legível via API — reproduzido ao vivo), **corrompe a página de configurações da fase na UI**,
+  defeito invisível para qualquer leitura de API. Receita completa, padrão de implementação e o
+  vetor de XSS da renderização sem sanitização em `connector-rules.md` §4.9.
 
 ### Adicionado
 - **O formulário inicial é uma fase oculta (`startFormPhaseId`)** — a armadilha mais cara da
@@ -104,9 +113,11 @@ As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram co
 - **Campo `connector` criado via API pode nascer quebrado na UI** ("We're sorry, something went
   wrong") sem nenhum sinal detectável por leitura — documentado como armadilha com verificação
   visual obrigatória, mas sem detecção automatizável até a plataforma expor um health-check.
-- **`statement` via API não renderizar na UI** segue sem causa confirmada pela plataforma — a
-  skill contorna (usa `dynamic_content` para conteúdo dinâmico e exige verificação visual), não
-  resolve.
+- **A causa dos statements quebrados foi fechada** (receita em §4.9), mas os defeitos de
+  plataforma seguem abertos e registrados para a engenharia: `dynamic_content` aceito pela mutation
+  e corrompendo a UI da fase; o `label` usado como discriminador de renderização (um rename na UI
+  quebra o campo); e a renderização de HTML sem sanitização (vetor de XSS mitigado por disciplina
+  de construção, não por proteção do produto).
 - A porta A lê estado e histórico de flows iPaaS, mas **não executa runs** — comportamento segue
   sendo evidência do teste funcional.
 - A ordem/posicionamento de fases novas inseridas em pipe existente (porta C) ainda depende de

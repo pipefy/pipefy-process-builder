@@ -1,6 +1,6 @@
 # Feedback consolidado para a engenharia do MCP Pipefy — agosto/2026
 
-Consolidação das sugestões de engenharia extraídas de **nove relatórios de campo** de builds e
+Consolidação das sugestões de engenharia extraídas de **dez relatórios de campo** de builds e
 diagnósticos reais feitos com o `pipefy-process-builder` entre 20 e 31 de agosto de 2026:
 
 | Fonte | Contexto |
@@ -14,6 +14,7 @@ diagnósticos reais feitos com o `pipefy-process-builder` entre 20 e 31 de agost
 | Agentes com MCP tools (Slack/Docs) | Tentativa de criação via API |
 | Firmas e Poderes (307240944) | Edição de agente + flow iPaaS |
 | KYC Sócios (307279407) | Diagnóstico de flow iPaaS em produção |
+| Investigação statement/conteúdo dinâmico | Engenharia reversa UI→API do campo de conteúdo dinâmico, atributo a atributo |
 
 Duplicatas foram fundidas; cada item traz a evidência. Os itens marcados **[validado ao vivo]**
 foram reproduzidos em 2026-08-31 contra o pipe de testes 301781351 durante a preparação da v3.2 da
@@ -105,11 +106,32 @@ lista do que só a engenharia resolve na raiz.
     seletor) enquanto a API o retorna como saudável — não há nenhum sinal legível. Expor um
     booleano de sanidade (ex.: `connector_valid`) ou validar o `connectedRepoId` resolvido antes de
     reportar sucesso. *(Bemol)*
-20. **Campo `statement` criado via API não renderiza na UI** (a API confirma criação e leitura; a
-    UI não mostra — relatado em start form). Confirmar se é bug de plataforma ou específico da via
-    API; enquanto isso, quem pede "conteúdo dinâmico" deve usar `dynamic_content`
-    **[validado ao vivo: `dynamic_content` é criável via API]**. *(Relatório campo dinâmico +
-    gravação)*
+20. **Conteúdo dinâmico (`statement`/`dynamic_content`) — cluster de 6 problemas**, fechado por
+    engenharia reversa UI→API (criar na UI, ler pela API, replicar, isolar variável por variável):
+    - (a) `field_type: "dynamic_content"` é aceito pela mutation e **corrompe a página de
+      configurações da fase na UI** (fica em branco; a fase deixa de ser editável manualmente até o
+      campo ser removido). Rejeitar na validação de entrada ou retirar da superfície — hoje é
+      armadilha silenciosa **[criação e releitura via API reproduzidas ao vivo; a corrupção só é
+      observável na UI]**. **Severidade alta.**
+    - (b) Não há enum documentado de `field_type` válidos com o comportamento de cada um — o tipo
+      certo (`statement`) só foi descoberto comparando com pipes existentes.
+    - (c) O **`label` no padrão `Statement-<uuid>` é usado pelo front-end como discriminador de
+      renderização**: label comum faz o campo renderizar como long-text editável, e um rename
+      aparentemente inofensivo na UI quebra o campo. Deveria ser atributo próprio, não convenção
+      de nome.
+    - (d) A `description` do statement (e o conteúdo substituído por token) é injetada como **HTML
+      sem sanitização** — campo-fonte editável por usuário, referenciado por token, vira XSS na
+      sessão de quem abre o card. A mitigação hoje é disciplina de construção (campo-fonte oculto
+      preenchido só por automação), não proteção do produto. **Severidade alta.**
+    - (e) O token `{{phase<id>.field<internal_id>}}` só resolve dentro do envelope HTML exato do
+      editor (`<p class="text-editor-paragraph"><span style="white-space: pre-wrap;">`) — fora
+      dele vira texto literal, sem erro, warning ou log.
+    - (f) O token usa `internal_id`; slug não dá erro — apenas não substitui.
+
+    Padrão transversal do cluster: **a escrita retorna sucesso e a leitura confirma o estado, mas
+    o comportamento real (renderização, substituição de token) só é observável na UI.** Qualquer
+    sinal nesse caminho — validação na entrada ou warning na resposta — reduziria muito o custo de
+    descoberta. *(Relatório campo dinâmico + gravação + investigação statement)*
 21. **`create_card`: erro de tipo claro quando `field_value` chega escalar.** O tipo é LIST; o
     valor escalar hoje devolve "campo obrigatório não preenchido" — mensagem de negócio que aponta
     para o lugar errado (três hipóteses falsas investigadas antes da introspecção). *(AON)*

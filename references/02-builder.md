@@ -58,7 +58,10 @@ que existe e o que falta e continue de onde parou.
    de `phases` e só é descoberto pelo cliente na UI (aconteceu num build real; ver
    `connector-rules.md`, seção 4.2). Rótulo **sem acento**, sem `/`, `.` ou emoji — acento quebra
    o slug ("Órgão" vira `rg_o`) — e ajuste para o rótulo final com `update_phase_field` depois.
-   **Nunca duplique ou clone campos** (quebra IDs). Anote label + internal_id de cada.
+   **Nunca duplique ou clone campos** (quebra IDs). Anote label + internal_id de cada. Se o spec
+   tiver campo de conteúdo dinâmico/statement, siga **a receita da seção 4.9 de
+   `connector-rules.md`** — o tipo aparente (`dynamic_content`) corrompe a UI da fase, e o
+   `statement` só funciona com label, description e token no formato exato.
 5. **Condicionais.** O `phase_id` que a criação espera é o da fase virtual Start form
    (`startFormPhaseId`) — a plataforma indexa toda condicional lá, seja qual for a fase pretendida.
    Preencha **sempre** o valor de comparação (sem ele a regra nunca dispara) e nunca ponha if-true

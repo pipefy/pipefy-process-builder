@@ -128,12 +128,9 @@ Tudo abaixo foi observado em builds reais ou verificado contra o schema.
 - `delete_phase_field` exige **`pipe_uuid` (formato UUID) + o slug do campo**. `pipe_id` numérico
   dá `PERMISSION_DENIED` e `internal_id` dá `RESOURCE_NOT_FOUND` — erros genéricos que não dizem
   qual formato era esperado. (Verificado ao vivo.)
-- **"Conteúdo dinâmico" é o tipo `dynamic_content`, não `statement`.** Quando o consultor pede
-  "campo dinâmico", o tipo certo é `dynamic_content` (criável via API — verificado ao vivo).
-  `statement` é outro tipo (texto informativo simples) e tem defeito conhecido: **criado via API,
-  responde sucesso, aparece na leitura e não renderiza na UI** (2 relatos; num deles todos os
-  campos tiveram que ser recriados à mão). Se criar `statement` via API for inevitável, a
-  verificação visual na UI vira pendência obrigatória.
+- **Conteúdo dinâmico/statement tem seção própria (4.9).** O essencial: o tipo certo é
+  `statement`, com uma receita exata; `dynamic_content` é aceito pela mutation e **corrompe a
+  página de configurações da fase** na UI. Nenhum dos dois defeitos é visível por leitura de API.
 - **`expressions_structure` e `structure_id` de condicional são strings** (`"0"`), não números —
   valor numérico é recusado sem mensagem que aponte o motivo.
 - **`create_pipe` ignora o parâmetro `phases` silenciosamente** — o pipe nasce com as 3 fases
@@ -266,6 +263,47 @@ observado em builds reais):
 
 A ordem importa: **`createCard` recusa card com campo de anexo obrigatório vazio** — não dá para
 criar o card primeiro e anexar depois. Resolva o upload antes de criar o card.
+
+### 4.9 Conteúdo dinâmico no card — o tipo é `statement`, e a receita é exata
+
+Bloco somente-leitura renderizado no card (instruções contextuais, resumo de agente, tabela de
+histórico, iframe). O caminho aparente pela API está errado, e o certo tem cinco regras não óbvias —
+todas descobertas por engenharia reversa (campo criado na UI, lido pela API, replicado atributo a
+atributo, variando um por vez). **Nada abaixo é visível por leitura de API**: a escrita responde
+sucesso, a releitura confirma, e o comportamento real só aparece na UI.
+
+- **`dynamic_content` é armadilha, não o tipo.** A mutation aceita e cria o campo normalmente — e a
+  página de configurações da fase **fica em branco na UI** (a fase inteira deixa de ser editável
+  manualmente até o campo ser removido). Não use.
+- **O conteúdo vive na `description` do campo, não em valor de card.** `statement` não tem `value`:
+  escrever nele via `update_card_field` falha silenciosamente. Conteúdo se altera com
+  `update_phase_field` na `description` — ou seja, no nível da fase, não do card.
+- **Conteúdo que varia por card = token apontando para outro campo**, no formato
+  `{{phase<ID_DA_FASE>.field<INTERNAL_ID>}}` — com **`internal_id`**, nunca slug (slug não dá
+  erro; só não substitui).
+- **O token só resolve dentro do envelope HTML exato do editor da UI:**
+  `<p class="text-editor-paragraph"><span style="white-space: pre-wrap;">{{...}}</span></p>`.
+  Fora dele (`<p>` sem a classe, `<span>` sem o style, token fora do span), o token aparece como
+  **texto literal** na tela — sem erro, sem log.
+- **O `label` precisa seguir o padrão `Statement-<uuid>`.** Com label comum ("Instruções",
+  "Aviso"), o campo renderiza como **long-text editável** — o usuário digita em cima do conteúdo.
+  O label é usado pelo front-end como discriminador de renderização; avise o cliente que um rename
+  aparentemente inofensivo na UI quebra o campo.
+- **A `description` renderiza HTML real, sem sanitização.** É o que viabiliza tabela e iframe — e é
+  vetor de XSS: campo-fonte editável por usuário, referenciado por token, vira HTML arbitrário
+  executado na sessão de quem abre o card. Disciplina obrigatória: **campo-fonte oculto,
+  preenchido só por automação/agente controlado**, nunca campo de digitação livre.
+
+Padrão de implementação para conteúdo por card: (1) campo oculto (`short_text`/`long_text`) que
+armazena o conteúdo; (2) automação/agente escreve nesse campo; (3) `statement` com label
+`Statement-<uuid>` e `description` no envelope exato com o token; (4) condicional de exibição,
+quando aplicável. Conteúdo estático por fase dispensa o token: HTML direto na `description`,
+alterável a qualquer momento via `update_phase_field`.
+
+O método que destravou isso vale como regra geral: **quando a tool aceita a escrita e o resultado
+não confere, o objeto criado pela UI é a fonte de verdade sobre o formato** — crie na UI, leia pela
+API, replique exatamente, e só então varie um atributo por vez para separar o obrigatório do
+cosmético.
 
 ## 5. Pipe clonado — risco de escrever no pipe errado
 

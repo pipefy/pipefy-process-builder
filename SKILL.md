@@ -10,7 +10,7 @@ description: >-
 
 # Pipefy Process Builder — orquestrador
 
-**Versão 3.1 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
+**Versão 3.2 (agosto/2026).** Se alguém perguntar qual versão está rodando, responda isso: versões
 antigas convivendo com esta causam comportamento imprevisível, e saber a versão é o primeiro passo
 para diagnosticar. Se você notar sinal de duplicata (outra skill de Pipefy disparando junto, ou
 menção ao pipe de controle "Process Builds"), avise o consultor para limpar as versões antigas.
@@ -80,9 +80,11 @@ receitas em lote de `references/graphql-recipes.md`. Termina com `changes.md` e 
 ### 3 — Conferência estrutural (subagente curto, modelo Haiku)
 Dispare um subagente **general-purpose** com `model: "haiku"`. O prompt contém somente: a
 instrução "leia e siga à risca o playbook em `<caminho absoluto de references/03-conferencia.md>`",
+a instrução **"você opera em somente leitura: nenhuma tool de escrita, exclusão ou toggle"** (já
+houve conferência que desativou os agentes de IA do cliente como efeito colateral de exploração),
 o **caminho absoluto da pasta de trabalho** e o caminho absoluto da pasta `references/`. Nada da
 conversa — a independência do olhar é o valor, e é ela que pega divergência silenciosa (campo com
-tipo trocado, condicional ancorada na fase errada).
+tipo trocado, formulário inicial vazio, ação de condicional no campo errado).
 
 Ao receber o resultado:
 - **CONFORME** → entregue: link do pipe, **o que foi configurado** (fases, campos, automações e
@@ -121,8 +123,9 @@ para uma varredura completa — é o mesmo motor de diagnóstico, sob demanda.
 Cada chamada ao Pipefy reenvia o contexto inteiro ao modelo. O que encarece não é o trabalho, é a
 quantidade de chamadas. Portanto:
 
-1. **Ler pipe = 1 query** (`graphql-recipes.md`, seção 1) + no máximo `get_automations` e
-   `get_ai_agents`. Nunca `get_phase_fields` em loop.
+1. **Ler pipe = 1 query** (`graphql-recipes.md`, seção 1) + no máximo a leitura de automações
+   (a query da seção 5, quando a condição de disparo importar) e `get_ai_agents`. Nunca
+   `get_phase_fields` em loop.
 2. **Escrever em lote** quando houver receita (campos, fases). Automações e condicionais pelas
    tools dedicadas.
 3. **Não releia o que já está no contexto.** Cada etapa lê seus arquivos de entrada uma vez.

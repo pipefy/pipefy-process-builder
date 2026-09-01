@@ -20,31 +20,52 @@ Dois modos, conforme o que o consultor tem em mãos:
 Peça a URL ou o id do pipe. Rode a query `AuditPipe` de `graphql-recipes.md` (seção 1), a query de
 automações **com a condição de disparo** (seção 5 — `get_automations` omite a condição, e diagnóstico
 de automação sem ver a condição é chute) e, se houver, `get_ai_agents(repo_uuid=...)`. Está tudo lá:
-fases, campos, condicionais com a fase em que estão ancoradas, movimentos permitidos, defaults de
-segurança. **Nunca** varra `get_phase_fields` por fase.
+fases, campos, condicionais com regra e ações completas, movimentos permitidos, defaults de
+segurança, campo de título, conexões com outros pipes e **webhooks** — o rastro das integrações
+externas do pipe. **Nunca** varra `get_phase_fields` por fase.
 
 ### 2. Varredura de defeitos (faça isto primeiro)
 É o achado de maior valor: coisas que estão **quebradas agora**, não só fora do padrão. Muitas
 vezes o cliente ainda não percebeu — encontrar antes dele evita atrito e vira percepção de valor.
 Procure explicitamente:
 
-- **Condicional órfã, mal ancorada ou sem gatilho** — condicional numa fase cujo campo referenciado
-  não existe ali, apontando para campo renomeado/excluído, ou **sem valor de comparação** (regra que
-  nunca dispara). Muita condicional "existente" está no formulário inicial em vez da fase pretendida.
-  Para detalhar a regra de uma suspeita, use `get_field_condition(<id>)` — só nas suspeitas.
+- **Condicional órfã ou sem gatilho** — expressão apontando para campo renomeado/excluído, **sem
+  valor de comparação** (`value` nulo ou `""` — regra que nunca dispara; achado real e frequente),
+  if-true e if-false no mesmo grupo, ou ação apontando para campo que não existe mais. A query da
+  seção 1 já traz expressões e ações de todas. **Não trate o atributo `phase` = Start form como
+  defeito:** a plataforma indexa toda condicional na fase virtual do formulário — a ancoragem real
+  é a das ações (`actions[].phase`/`phaseField`). Já houve diagnóstico errado (e condicional
+  duplicada criada) por ler essa indexação como "condicional no lugar errado".
 - **Campo obrigatório escondido por condicional** — `required: true` em campo que alguma condicional
   esconde. Ele continua obrigatório e **trava o movimento do card sem erro visível**: o usuário não
   entende por que o card não anda. Defeito silencioso clássico, vale severidade alta.
 - **Fase sem saída** — fase que não é `done` e não tem `next_phase_ids` nem movimento permitido: o
   card entra e não sai. Também o inverso: fluxo sem nenhuma fase `done`.
 - **Automação apontando para o vazio** — fase de destino inexistente, campo de destino excluído,
-  template de e-mail ausente, destinatário quebrado.
+  template de e-mail ausente, destinatário quebrado. Inclui o **gatilho órfão**: `triggerFieldIds`
+  com `internal_id` que não existe mais em nenhuma fase — a automação simplesmente nunca dispara,
+  e foi achado real (campo apagado depois de a automação criada).
 - **Automação desativada e esquecida** — `active: false` em regra que o processo pressupõe ativa
   (veja também `disabledReason`). E **automação sem condição** quando a lógica exige uma: só a query
   da seção 5 mostra isso.
 - **Obrigatório travando automação** — campo obrigatório numa fase para onde uma automação move o
   card sem preencher esse campo.
 - **Campo de prazo/SLA órfão** — campo de SLA ou data que nenhuma automação alimenta.
+- **Campo alimentado por integração que não existe** — campo cujo preenchimento o processo atribui
+  a uma receita iPaaS, flow ou webhook que não está lá (não foi clonado, foi desligado, aponta para
+  outro lugar). Cruze os `webhooks` da leitura com os campos de origem "Automação/Conector" e, se o
+  pipe tiver iPaaS habilitado, liste os flows do pipe (leitura escopada, ver `ipaas.md`). Já passou
+  despercebido em diagnóstico real — o campo parece só "vazio", e o processo quebra em produção.
+  Vale também o inverso: **campo gerado por flow externo que nenhuma leitura de agente/automação
+  revela** — um "Resultado (HTML)" já foi procurado em agentes e automações quando o gerador real
+  era um flow iPaaS visível só pelos webhooks.
+- **Flow iPaaS publicado e falhando** — quando o pipe tem iPaaS, confira as runs recentes dos flows
+  publicados: flow em produção com runs falhando é defeito de severidade alta que nenhuma leitura
+  estrutural do pipe mostra.
+- **Prompt de agente frágil** — instrução de agente existente com critério ambíguo (ex.: tratar
+  "o contrato *permite* X" como "o contrato *exige* X" — um falso positivo real em produção veio
+  daí), campo de saída que a instrução não menciona, ou referência a campo que não existe mais.
+  Não é reescrever o prompt: é apontar a fragilidade e o risco concreto.
 - **Select sem opções**, campos duplicados com o mesmo rótulo em fases diferentes sem razão,
   campos não editáveis que uma automação tenta preencher.
 - **Agente de IA em estado indevido** — inativo quando deveria rodar, ou **ativo sem o cliente
@@ -121,8 +142,10 @@ defeitos: <número>
 5. **Oportunidades** — variações e agentes de IA de casos semelhantes do brain, com o caso de
    referência citado.
 6. **As-is** (só modo pipe) — estrutura normalizada no formato das seções 2 a 6 do spec (fases,
-   campos, automações, condicionais, agentes, com ids reais). É o que permite virar plano de deltas
-   na porta C sem reler o pipe.
+   campos, automações, condicionais, agentes, **conexões** — databases/tabelas/pipes relacionados —
+   e webhooks/flows, com ids reais). É o que permite virar plano de deltas na porta C sem reler o
+   pipe — e é o que impede a porta C de propor estrutura paralela ao que já existe (já se criou
+   pipe auxiliar para o que um database conectado cobria).
 
 ## Guardrails
 - **Nada de escrita no Pipefy.** Nem card de teste, nem rótulo, nem "só ativar essa automação".

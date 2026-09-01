@@ -230,6 +230,10 @@ segredos, e exigem um fluxo de autorização próprio.
   a forma normal e obrigatória — não as remova.
 - Delete, retry, publish, enable e qualquer alteração em app externo exigem intenção explícita do
   consultor. Não use essas ações como tentativa de correção.
+- **Reexecutar uma run é execução real e paga, e estratégias de retry não são mutuamente
+  exclusivas.** Disparar duas para "ver qual funciona" processa o card duas vezes — aconteceu, com
+  consultas pagas a bureaus externos em dobro. Uma estratégia por vez, resultado confirmado antes
+  de considerar outra, e sempre com a intenção explícita do consultor.
 - Se uma integração cruzar pipes, fixe no spec qual `pipe_id` é dono do flow e quais pipes apenas
   recebem efeito. Não deduza o alvo pelo nome.
 - A conferência estrutural checa somente o flow e seus estados no iPaaS; comportamento em sistema

@@ -35,6 +35,13 @@ be read (PDF/PNG/JPEG, complex or standardized tables) and AI + Websearch when t
 real-time external data (e.g., FX rates). Tell the client these raise consumption, and validate
 Websearch use with the AI team.
 
+When you settle an agent with the user, settle its **trigger** too — the card entering a phase, or a
+dedicated select field (production pattern: "Iniciar análise com IA" = Sim). Behaviors without a
+discrete trigger cannot be created via the API, and a trigger discovered mid-build becomes an
+unplanned field. Agents are always built in the Agents tab (`create_ai_agent`), never as automations
+with an "ask AI" action. These offers apply to porta C evolutions as much as to new builds — an
+existing pipe with no agents is exactly where the recommendation is most valuable.
+
 Example offer:
 > Recomendo colocar um agente de IA nativo do Pipefy para validar as cotações automaticamente e
 > sinalizar divergências, em vez de conferência manual — posso já incluir. Quer também um agente para

@@ -1,5 +1,128 @@
 # Changelog
 
+## [3.2.0] — 2026-08-31 — a rodada dos relatórios de campo
+
+Primeira rodada alimentada por uso real em escala: dez relatórios de builds e diagnósticos de
+consultores (Onboarding PJ/PF, Siniestros Chile, Bemol CGI Garantias, AON Endoso, Ecom Energia,
+POC de compras, agentes com MCP tools, Firmas e Poderes, campo dinâmico, e a investigação de
+statement/conteúdo dinâmico por engenharia reversa) mais dois feedbacks estruturados. Toda mudança
+de query e as afirmações de schema mais arriscadas foram **validadas ao vivo** contra um pipe de
+testes antes de entrar nos arquivos — a régua que a 3.1 criou para o iPaaS ("teste como portão")
+aplicada à própria documentação do conector. Com um limite que a própria rodada expôs: validação
+por API prova criação e leitura, **não** comportamento de renderização na UI (ver o item de
+conteúdo dinâmico abaixo).
+
+As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram consolidadas num
+documento à parte, entregue fora do repositório para encaminhamento à engenharia.
+
+### Corrigido
+- **`title_field_id` aceita somente o slug do campo, não o `internal_id`.** A receita da seção 6
+  do `graphql-recipes.md` ensinava o formato errado; três builds independentes tropeçaram nisso.
+  Verificado ao vivo: internal_id → `Field not found`; slug → sucesso. O campo de título atual
+  agora é legível (`title_field`) na query de auditoria.
+- **Criação de template de e-mail não existe.** `connector-rules.md` §4.1 e o passo 7 do Builder
+  afirmavam que a API "cria e envia"; a introspecção completa do schema num build real provou que
+  não há mutation de criação — duas automações foram desenhadas sobre a premissa errada. O guia
+  agora manda entregar o conteúdo pronto para colar (assunto + corpo) e criar a automação de envio
+  na retomada, quando o template existir na UI.
+- **A ligação de fases também é aplicada pela API.** O material sugeria que a restrição era só da
+  aba Fluxo da UI; `moveCardToPhase` para fase não ligada é **recusado pela API** (verificado com
+  card real). A pendência manual continua a mesma — a correção é na expectativa de contorno.
+- **O modelo de ancoragem de condicional estava errado.** A plataforma indexa **toda** condicional
+  sob a fase virtual Start form: o atributo `phase` aponta para lá em todas, e o aninhamento
+  `phases[].fieldConditions` volta **vazio** mesmo em pipe cheio de regras (verificado ao vivo).
+  Dois builds diagnosticaram errado por isso — um criou condicional duplicada, outro reportou
+  "condicional no formulário inicial" como defeito. A ancoragem real está nas **ações**
+  (`actions[].phase`/`phaseField`), agora lidas pela própria query de auditoria; `diagnostico.md`,
+  `02-builder.md` e `03-conferencia.md` foram reescritos nesse modelo.
+- **Conteúdo dinâmico: o tipo é `statement` com receita exata — e `dynamic_content` é armadilha.**
+  Dois relatos iniciais apontavam campos `statement` invisíveis ou quebrados na UI, o que sugeria
+  trocar de tipo; a investigação por engenharia reversa (campo criado na UI, lido pela API,
+  replicado atributo a atributo) fechou a causa real: o tipo certo **é** `statement`, mas exige
+  conteúdo na `description` (não em valor de card), token `{{phase<id>.field<internal_id>}}` dentro
+  do envelope HTML exato do editor, e label no padrão `Statement-<uuid>` — sem isso o campo vira
+  long-text editável ou mostra o token literal. Já `dynamic_content`, o tipo de nome óbvio (criável
+  e legível via API — reproduzido ao vivo), **corrompe a página de configurações da fase na UI**,
+  defeito invisível para qualquer leitura de API. Receita completa, padrão de implementação e o
+  vetor de XSS da renderização sem sanitização em `connector-rules.md` §4.9.
+
+### Adicionado
+- **O formulário inicial é uma fase oculta (`startFormPhaseId`)** — a armadilha mais cara da
+  rodada: 13 campos criados na primeira fase visível, pipe entregue com start form vazio, e o
+  defeito atravessou **toda** verificação automatizada (só o consultor pegou, na UI). A query
+  `AuditPipe` agora traz o id da fase oculta; o Builder cria os campos da "Fase 0" nela; a
+  conferência ganhou o lint **"formulário inicial vazio = divergência crítica"**; e a criação de
+  condicional deixa de exigir adivinhação de id (era "id da primeira fase − 1" na tentativa e erro).
+- **`AuditPipe` v2** (exercitada ao vivo, ponta a ponta): `startFormPhaseId`, `title_field`,
+  `webhooks` (o rastro de integrações externas), `parentsRelations`/`childrenRelations` (conexões
+  do pipe) e condicionais com expressões **e ações** (campo afetado, fase, ramo `whenEvaluator`) —
+  a mesma 1 chamada passa a sustentar os lints da conferência e a varredura da porta A, sem
+  `get_field_condition` por suspeita.
+- **`connector-rules.md` §4.7 — Agentes de IA**, consolidando 6 relatos: `update_ai_agent` é
+  replace-all (apagou behaviors em produção); `id`/`referenceId` não voltam no payload; limite de
+  10.000 caracteres por instrução; criação que falha deixa agente parcial (corrigir por update,
+  nunca recriar); `validate_ai_agent_behaviors` é lint, não portão; behavior exige **gatilho
+  discreto** (select dedicado ou entrada na fase — `field_updated` de anexo não valida);
+  `%{action:...}` é a plataforma que insere ao salvar; agente se constrói na aba de Agentes, nunca
+  como automação "peça a IA"; e agente com ação de MCP tool (Slack, Docs) é só-UI — vira
+  entregabilidade Manual já no spec.
+- **`connector-rules.md` §4.8 — Anexos**: o fluxo completo presigned URL (expira em 300s) → PUT
+  fora do MCP → `storage_path` (nunca `upload_url`), os formatos divergentes por mutation
+  (`createCard` = lista, `updateFieldsValues` = string), upload obrigatório **antes** do card
+  quando o anexo é required, e a pegadinha do filename com acento no shell.
+- **Compatibilidade evento×ação validada no Planner**: `get_automation_events` +
+  `get_automation_actions` entram no contrato de entregabilidade — o catálogo é mais restrito do
+  que parece (mover card não aceita `field_updated`; `distribute_assignments` não aceita
+  `card_created`) e 2 de 4 automações de um spec aprovado se revelaram inconstruíveis só no build.
+- **Conferência read-only nominal**: um subagente de conferência **desativou os 2 agentes de IA do
+  cliente** como efeito colateral de exploração. O playbook agora proíbe nominalmente
+  `create_*`/`update_*`/`delete_*`/`toggle_*`, e o prompt que o orquestrador monta (SKILL.md,
+  etapa 3) carrega a instrução de somente leitura. A conferência também passa a comparar os
+  **campos de saída** de cada behavior com o spec (agente que omitiu campo de saída passou
+  despercebido em build real).
+- **Porta A: varredura de integrações e agentes** — fecha o gap registrado desde a 3.0: campo
+  alimentado por receita/flow/webhook inexistente (2 campos plantados de propósito num teste
+  passaram batidos), gerador externo invisível (um "Resultado HTML" só localizável pelos
+  webhooks), flow iPaaS publicado com runs falhando, **gatilho órfão** de automação
+  (`triggerFieldIds` apontando para campo apagado) e **prompt de agente frágil** (critério
+  "permite" lido como "exige" gerou falso positivo em produção). O As-is passa a inventariar
+  conexões e webhooks — e a porta C ganha a regra de não propor estrutura paralela ao que já
+  existe (um pipe auxiliar redundante com um database conectado precisou ser desfeito).
+- **Grupos de condição**: if-true e if-false no mesmo grupo (todas as condicionais de um build
+  saíram erradas assim) vira armadilha documentada, com verificação pelo ramo `whenEvaluator` na
+  releitura.
+- **Spec de agente ganha coluna Gatilho** (`handoff-schemas.md`), e o Builder ganha o guardrail:
+  estrutura fora do spec é **pergunta ao consultor**, não desvio registrado depois do fato.
+- **Planner anti-capitulação**: contestação do consultor se responde com análise contra o as-is e
+  o conhecimento — nem "ótimo ponto" reflexo, nem teimosia.
+- Armadilhas menores documentadas em §4.4: `create_pipe` ignora `phases`; `event_params.phase` é
+  legível mas não escrevível; shapes de escrita de automação que funcionaram
+  (`extra_input.event_params.triggerFieldIds`, `strategy` como enum); config de
+  `distribute_assignments` ilegível; "Acesso negado" transitório; `delete_phase_field` =
+  `pipe_uuid` + slug (verificado ao vivo); `expressions_structure` é string; erro de `create_card`
+  aponta para o sintoma errado (`field_value` é LIST). Em `ipaas.md`: reexecutar run é execução
+  real e paga, e estratégias de retry não são mutuamente exclusivas (um card foi processado em
+  dobro por testar duas em sequência).
+
+### Conhecido / ainda não coberto
+- Da lista da 3.1, seguem em aberto: a receita de mutation com forma errada (neutralizada pela
+  regra de introspecção), a arquitetura MAIN + SUBFLOW, o export de flow como portador de segredo,
+  a nomenclatura documentada ≠ praticada, o cruzamento campo destino × formato do payload e a
+  tabela `FieldTypeId` parcial. O item "porta A não vê iPaaS" desta lista **foi fechado** nesta
+  rodada.
+- **Campo `connector` criado via API pode nascer quebrado na UI** ("We're sorry, something went
+  wrong") sem nenhum sinal detectável por leitura — documentado como armadilha com verificação
+  visual obrigatória, mas sem detecção automatizável até a plataforma expor um health-check.
+- **A causa dos statements quebrados foi fechada** (receita em §4.9), mas os defeitos de
+  plataforma seguem abertos e registrados para a engenharia: `dynamic_content` aceito pela mutation
+  e corrompendo a UI da fase; o `label` usado como discriminador de renderização (um rename na UI
+  quebra o campo); e a renderização de HTML sem sanitização (vetor de XSS mitigado por disciplina
+  de construção, não por proteção do produto).
+- A porta A lê estado e histórico de flows iPaaS, mas **não executa runs** — comportamento segue
+  sendo evidência do teste funcional.
+- A ordem/posicionamento de fases novas inseridas em pipe existente (porta C) ainda depende de
+  ajuste fino na UI em alguns casos relatados — não investigado nesta rodada.
+
 ## [3.1.0] — 2026-08-26 — iPaaS ancorado em evidência, e o teste como portão
 
 A maior rodada de iPaaS desde a 3.0.0, construída sobre quatro fontes de evidência, na ordem em que

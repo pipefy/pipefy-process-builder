@@ -100,16 +100,20 @@ As sugestões dos relatórios dirigidas ao servidor MCP (não à skill) foram co
   (`extra_input.event_params.triggerFieldIds`, `strategy` como enum); config de
   `distribute_assignments` ilegível; "Acesso negado" transitório; `delete_phase_field` =
   `pipe_uuid` + slug (verificado ao vivo); `expressions_structure` é string; erro de `create_card`
-  aponta para o sintoma errado (`field_value` é LIST). Em `ipaas.md`: reexecutar run é execução
-  real e paga, e estratégias de retry não são mutuamente exclusivas (um card foi processado em
-  dobro por testar duas em sequência).
+  aponta para o sintoma errado (`field_value` é LIST).
 
 ### Conhecido / ainda não coberto
+- **`references/ipaas.md` foi removido do repositório nesta rodada, por decisão do time** (o
+  conteúdo de iPaaS passa a viver fora desta skill). As referências a ele espalhadas pelos
+  playbooks (SKILL.md, planner, builder passo 12, conferência, teste, review, connector-rules §4.6,
+  handoff-schemas) **permanecem no lugar e apontam para um arquivo que não existe** — serão
+  tratadas numa próxima rodada. Até lá, fluxo com integração iPaaS não tem playbook nesta skill; a
+  regra de retry de run registrada nesta rodada saiu junto com o arquivo.
 - Da lista da 3.1, seguem em aberto: a receita de mutation com forma errada (neutralizada pela
   regra de introspecção), a arquitetura MAIN + SUBFLOW, o export de flow como portador de segredo,
   a nomenclatura documentada ≠ praticada, o cruzamento campo destino × formato do payload e a
-  tabela `FieldTypeId` parcial. O item "porta A não vê iPaaS" desta lista **foi fechado** nesta
-  rodada.
+  tabela `FieldTypeId` parcial. O item "porta A não vê iPaaS" desta lista foi endereçado nesta
+  rodada (varredura de webhooks/flows no diagnóstico), com a ressalva do item acima.
 - **Campo `connector` criado via API pode nascer quebrado na UI** ("We're sorry, something went
   wrong") sem nenhum sinal detectável por leitura — documentado como armadilha com verificação
   visual obrigatória, mas sem detecção automatizável até a plataforma expor um health-check.

@@ -53,9 +53,14 @@ automações + agentes de IA + integrações iPaaS.
    (Manual / Automação / Conector / Agente IA) | Condicional (se houver)`. Inclui o formulário
    inicial como "Fase 0 — Start form".
 4. **Automações** — tabela: `Nome (nomenclatura oficial) | Gatilho | Condição | Ação`.
-5. **Condicionais** — tabela: `Nome | Fase (onde fica ancorada) | Campo relacionado | Regra`.
-6. **Agentes de IA** — tabela: `Nome | Fase(s) | Tipo (AI 2.0 / +IDP / +Websearch) | Entradas |
-   Saídas | Observações de consumo`.
+5. **Condicionais** — tabela: `Nome | Fase de aplicação (onde estão os campos afetados) |
+   Campo-gatilho | Regra (operação + valor) | Ação (esconder/mostrar quais campos, em que ramo)`.
+   Nota: na plataforma, toda condicional é indexada sob a fase virtual Start form — a "fase de
+   aplicação" do spec descreve onde a regra age (os campos das ações), não o atributo `phase`.
+6. **Agentes de IA** — tabela: `Nome | Fase(s) | Gatilho (entrada na fase / campo select dedicado)
+   | Tipo (AI 2.0 / +IDP / +Websearch) | Entradas | Saídas | Observações de consumo`. Behavior sem
+   gatilho discreto não é criável via API — gatilho indefinido é open question, não detalhe que o
+   Builder resolve sozinho.
 7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
    Entradas → saídas e procedência dos data pills (schema do pipe/piece/amostra) | Conexões requeridas
    (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo | Estado esperado

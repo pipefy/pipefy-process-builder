@@ -29,16 +29,24 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
 3. Compare item a item com o spec:
    - **Fases** — nome, ordem, quais são `done`. Nada sobrando, nada faltando.
    - **Campos por fase** — rótulo, tipo, obrigatoriedade, opções de select, e **em que fase estão**.
-   - **Formulário inicial** — os campos da "Fase 0" do spec.
-   - **Condicionais** — existem, e estão **ancoradas na fase certa**, **com valor de comparação
-     preenchido**. O aninhamento da query mostra a ancoragem direto. Este é o objeto mais
-     traiçoeiro: ele responde "criado com sucesso" e às vezes não persiste ou cai no formulário
-     inicial. Condicional ausente ou na fase errada é a divergência mais comum de todas.
+   - **Formulário inicial** — os campos da "Fase 0" do spec, comparados com `start_form_fields`.
+     Lembre: o start form é uma **fase oculta**, fora de `phases` — campo da Fase 0 criado na
+     primeira fase visível é exatamente o defeito do lint 4 abaixo.
+   - **Condicionais** — existem, **com valor de comparação preenchido**, e as **ações** apontam
+     para os campos certos, no ramo certo (`whenEvaluator` separa if-true de if-false — dois
+     desfechos no mesmo grupo é divergência). A query da seção 1 traz expressões e ações de todas.
+     **Não julgue ancoragem pelo atributo `phase`:** toda condicional reporta a fase Start form —
+     é indexação da plataforma, não defeito; a ancoragem real é a das ações
+     (`actions[].phase`/`phaseField`). Este é o objeto mais traiçoeiro: responde "criado com
+     sucesso" e às vezes não persiste. Condicional ausente, sem valor ou com ação no campo errado
+     é a divergência mais comum de todas.
    - **Automações** — nome, gatilho, **condição** e ação. Marque as que o changes declarou como
      "criada sem verificação". Automação com `active: false` esquecida desativada é divergência.
    - **Agentes de IA** — existem, estão nas fases previstas e **no estado de ativação que o spec
      pediu**. Agente ativo que o spec não pediu ativo é divergência de severidade alta: consome
-     crédito e age nos cards do cliente.
+     crédito e age nos cards do cliente. Confira também **as saídas**: os campos que cada behavior
+     preenche batem com a coluna Saídas do spec — agente que omite um campo de saída já passou
+     despercebido em build real.
    - **Integrações iPaaS** — para cada linha do spec, use o catálogo do `pipe_id` dono para ler o
      flow e validar: `flow_id`, trigger, steps/pieces, conexões reutilizadas por `externalId`, estado
      de validação, situação dos data pills e estado de publicação. Flow publicado/habilitado sem
@@ -62,6 +70,11 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
      condicional esconde: ele continua obrigatório e **trava o movimento do card sem erro visível**.
    - **Fluxo sem fase `done`.** Nenhuma fase marcada como concluída significa processo que nunca
      termina.
+   - **Formulário inicial vazio.** Spec com campos na "Fase 0" e `start_form_fields` vazio (ou
+     incompleto) significa que os campos foram criados na fase visível errada — o start form é uma
+     fase oculta fora de `phases`, então o pipe "parece" completo em qualquer leitura de fases e o
+     cliente só descobre na UI. Divergência **crítica**, com a lista dos campos a mover. Já
+     atravessou uma entrega real inteira sem ser pega.
 5. Escreva `conferencia.md` na pasta de trabalho, no formato abaixo.
 
 ## Formato do `conferencia.md`
@@ -103,7 +116,11 @@ e o que eles tocam diretamente. Não refaça a auditoria completa: releia o pipe
 mantenha no arquivo as divergências que seguem abertas, se houver.
 
 ## Guardrails
-- **Você nunca escreve no Pipefy.** Nem um campo, nem um rótulo. Sua única escrita é o
+- **Você nunca escreve no Pipefy.** Nem um campo, nem um rótulo, nem "só reativar/desativar
+  rapidinho": **nenhuma chamada de `create_*`, `update_*`, `delete_*` ou `toggle_*`** — em
+  particular `toggle_ai_agent_status`. Já houve conferência que **desativou os agentes de IA do
+  cliente** como efeito colateral de exploração, e o defeito só foi pego porque o builder
+  desconfiou do próprio relatório. Suas tools são as de leitura; sua única escrita é o
   `conferencia.md`.
 - Não julgue o desenho ("essa fase parece desnecessária") — isso é papel do review completo. Aqui
   só existe spec × realidade.

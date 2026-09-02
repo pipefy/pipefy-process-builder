@@ -296,10 +296,6 @@ integrações aprovadas, preservando portões explícitos de segurança e de go-
   ganha checklist de iPaaS: a conferência confere `flow_id`, conexões e estado de publicação
   contra o spec; o teste funcional só executa efeito externo com aprovação registrada; o review
   completo cobra procedência dos data pills documentada (`shape_verified`) antes de publicar.
-- `references/brain-access.md` — nova fonte de grounding, opcional: **padrões de integração**
-  (iPaaS blueprints) já resolvidos no brain por app/piece ou tipo de evento. Busca pontual antes
-  de desenhar um flow do zero; ausência de resultado não bloqueia nada — o acervo ainda está
-  crescendo, e a skill segue direto para a descoberta normal do catálogo.
 
 ### Corrigido
 - Proibição de aspas (`'`/`"`) em valor de step de flow, antes ausente, agora documentada em

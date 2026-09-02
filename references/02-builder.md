@@ -17,7 +17,8 @@ Converse em português. Reporte progresso de forma tersa — sem palestras.
 2. Leia o `spec.md` da pasta de trabalho. Se existir `conferencia.md` com divergências ou
    `review.md` com "Correções exigidas", **essa lista é o seu trabalho** — mexa somente nos itens
    listados, nada além. Se houver `changes.md` com status PARCIAL, retome do ponto registrado.
-3. **Não leia mais nada.** Nem a conversa do discovery, nem o brain. O spec é o mundo.
+3. **Não leia mais nada.** Nem a conversa do discovery, nem os documentos de referência do
+   planner. O spec é o mundo.
 4. Se o spec tiver integração iPaaS, confira que cada linha fixa pipe dono, trigger, pieces,
    mapeamentos, conexão existente e estado esperado. Falta de conexão ou aprovação exigida não é
    lacuna a ser resolvida por você: siga o handoff de `ipaas.md`.

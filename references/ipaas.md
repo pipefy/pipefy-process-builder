@@ -13,10 +13,6 @@ agentes de IA.
    não tente contornar: registre a pendência com a mensagem devolvida pelo MCP.
 3. Nunca carregue o catálogo inteiro no contexto. Para cada ação, descubra o catálogo compacto,
    expanda somente o `tool_name` que será usado e monte os argumentos a partir do `inputSchema`.
-4. Antes de desenhar os passos do zero, faça a busca pontual de `brain-access.md` (seção
-   "Padrões de integração") por um caso equivalente já resolvido para o mesmo app/piece. Não é
-   bloqueante: se a busca não retornar nada, siga direto para a descoberta do catálogo abaixo —
-   esse acervo pode ainda não cobrir iPaaS, e isso não é falha de nada.
 
 ## Conexões
 

@@ -4,8 +4,8 @@ description: >-
   Consultor de processos Pipefy num fluxo guiado. Use quando alguém quiser (a) diagnosticar,
   revisar ou auditar um processo que já existe no Pipefy — achar erros, avaliar conformidade,
   sugerir melhorias; (b) criar um processo novo do zero ("quero um processo de compras", "monta
-  um pipe de X para o cliente Y"); ou (c) evoluir/ajustar um pipe existente. Ancorado no padrão
-  da BU e nos benchmarks de clientes do brain, constrói via MCP do Pipefy e confere o resultado.
+  um pipe de X para o cliente Y"); ou (c) evoluir/ajustar um pipe existente. Ancorado nos padrões
+  da BU e no catálogo de decisões, constrói via MCP do Pipefy e confere o resultado.
 ---
 
 # Pipefy Process Builder — orquestrador
@@ -23,11 +23,9 @@ arquivos de referência, nomes de etapas) — o consultor vê um fluxo único e 
 
 ## Pré-check (uma vez, no início)
 
-Dois conectores (MCP) sustentam o fluxo:
-- **Pipefy** — obrigatório para ler/construir pipes. Confirme com leitura leve escopada (ver
-  `references/connector-rules.md`). Sem ele ou sem acesso à org → oriente e pare.
-- **Pipefy Brain (Corporate)** — para o grounding no conhecimento (ver `references/brain-access.md`).
-  Sem ele o fluxo segue com julgamento consultivo, mas avise que ficará sem o grounding do brain.
+O connector **Pipefy** (MCP) sustenta o fluxo — obrigatório para ler/construir pipes. Confirme
+com leitura leve escopada (ver `references/connector-rules.md`). Sem ele ou sem acesso à org →
+oriente e pare.
 
 Quando o spec incluir uma **integração iPaaS**, o mesmo connector Pipefy também precisa expor o
 catálogo iPaaS do pipe alvo. Siga `references/ipaas.md`: confirme-o de forma escopada antes de
@@ -70,8 +68,8 @@ para retomar (o consultor aponta a pasta e você continua da etapa pendente).
 ## Etapas da porta B (criar)
 
 ### 1 — Planner (inline)
-Siga `references/01-planner.md`. Discovery consultivo ancorado no brain. Termina com o `spec.md`
-aprovado pelo consultor. **Sem aprovação explícita, não construa nada.**
+Siga `references/01-planner.md`. Discovery consultivo ancorado nos padrões da BU. Termina
+com o `spec.md` aprovado pelo consultor. **Sem aprovação explícita, não construa nada.**
 
 ### 2 — Builder (inline)
 Siga `references/02-builder.md`. Constrói exatamente o que o spec descreve, via MCP, usando as

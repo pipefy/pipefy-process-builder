@@ -8,7 +8,8 @@ frequência é isso que o consultor quer. Se ele quiser agir sobre os achados, o
 porta C (evoluir), sem empurrar.
 
 Leia antes: `graphql-recipes.md` (seção 1), `nomenclature.md` e `modeling_best_practices.md` (o
-gabarito da conformidade), `brain-access.md` (grounding) e `connector-rules.md`.
+gabarito da conformidade), `golden_standard_schema.md` e `decision_catalog.md` (grounding) e
+`connector-rules.md`.
 
 Dois modos, conforme o que o consultor tem em mãos:
 
@@ -84,10 +85,10 @@ Depois dos defeitos, avalie o desenho. Cada achado vem com recomendação:
   condicionais, e-mails, incluindo tags como `[Inativo]`, `[Auxiliar]`, `[Integração]`) e
   `modeling_best_practices.md` (número de fases, hide-all por fase, movimentos críticos por
   automação/botão em vez de arrasto, responsável por card, timezone em SLAs).
-- **Alinhamento à BU** — consulte a base da BU do domínio no brain (`brain-access.md`): o que o
-  padrão canônico faz e este pipe não faz, e o que ele faz que o padrão não prevê.
-- **Oportunidades do brain** — 1 a 3 casos de clientes da mesma taxonomia: variações e agentes de
-  IA que processos semelhantes usam com bom resultado.
+- **Alinhamento à BU** — consulte `golden_standard_schema.md`: o que o padrão canônico do domínio
+  faz e este pipe não faz, e o que ele faz que o padrão não prevê.
+- **Oportunidades** — 1 a 3 variações de `decision_catalog.md` que couberem: agentes de IA e
+  padrões estruturais que processos semelhantes usam com bom resultado.
 
 ### 4. Entrega
 Escreva `diagnostico.md` na pasta de trabalho (formato abaixo) e apresente no chat um resumo
@@ -103,8 +104,8 @@ planilha do cliente e quer saber **o que ainda falta definir** antes de colocar 
 Não há pipe para ler; a matéria-prima são os documentos.
 
 1. Leia os documentos que ele apontar.
-2. Consulte a base da BU do domínio no brain: ela é o gabarito do que um processo desse tipo
-   precisa ter.
+2. Consulte `golden_standard_schema.md` e `decision_catalog.md`: é o gabarito do que um processo
+   desse tipo precisa ter.
 3. Produza o **relatório de lacunas**: para cada fase provável, o que já está definido e o que
    falta — regras de decisão, alçadas, campos e tipos, condicionais, responsáveis, SLAs,
    integrações, tratamento de exceção.
@@ -126,7 +127,6 @@ modo: pipe | documentacao
 cliente: <nome>
 pipe_analisado: <id + url | n/a>
 dominio: <ex.: Compras>
-referencias_brain: [<documentos consultados>]
 diagnosticado_em: <YYYY-MM-DD>
 defeitos: <número>
 ---
@@ -139,8 +139,8 @@ defeitos: <número>
 3. **Conformidade** — tabela: `Item | Situação | Referência (nomenclatura/best practice) |
    Recomendação`. Só o que está fora do padrão.
 4. **Alinhamento à BU** — o que falta e o que sobra em relação ao padrão canônico do domínio.
-5. **Oportunidades** — variações e agentes de IA de casos semelhantes do brain, com o caso de
-   referência citado.
+5. **Oportunidades** — variações e agentes de IA de `decision_catalog.md` que couberem, com a
+   variação de referência citada.
 6. **As-is** (só modo pipe) — estrutura normalizada no formato das seções 2 a 6 do spec (fases,
    campos, automações, condicionais, agentes, **conexões** — databases/tabelas/pipes relacionados —
    e webhooks/flows, com ids reais). É o que permite virar plano de deltas na porta C sem reler o
@@ -151,6 +151,6 @@ defeitos: <número>
 - **Nada de escrita no Pipefy.** Nem card de teste, nem rótulo, nem "só ativar essa automação".
   Se o consultor pedir correção durante o diagnóstico, ofereça a porta C — não corrija aqui.
 - Severidade é sobre impacto no usuário do processo, não sobre elegância do modelo.
-- Não invente padrão: o que não estiver na BU nem em caso do brain, rotule como sugestão sua.
-- Disciplina de custo: 2 a 3 chamadas para ler o pipe, 1 a 3 documentos do brain. Nunca despeje
-  a base inteira nem varra fase por fase.
+- Não invente padrão: o que não estiver em `golden_standard_schema.md` nem `decision_catalog.md`,
+  rotule como sugestão sua.
+- Disciplina de custo: 2 a 3 chamadas para ler o pipe. Nunca varra fase por fase.

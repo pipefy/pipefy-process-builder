@@ -60,7 +60,7 @@ essencial da entrega? Duas verificações obrigatórias aqui:
 Escreva `review.md` na pasta de trabalho (formato na seção 4 de `handoff-schemas.md`) e siga:
 
 - **SHIP** — está pronto. Devolva ao orquestrador o veredito e o **link do pipe**. O
-  `snapshot-final.md` **não** é obrigatório: ele serve para documentar o caso no brain depois, e
+  `snapshot-final.md` **não** é obrigatório: ele serve apenas de registro para consulta futura, e
   reescrever a estrutura inteira do pipe como output é a operação mais cara do fluxo. Gere apenas
   se o consultor pedir, e sempre no formato compacto da seção 7 de `handoff-schemas.md`.
 - **NEEDS WORK** — consertável. A tabela "Correções exigidas" precisa ser executável pelo Builder

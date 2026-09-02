@@ -36,7 +36,6 @@ cliente: <nome>
 org_destino: <nome + id>
 workspace_destino: <nome + id | n/a>
 dominio: <ex.: Compras>
-referencias_brain: [<documentos consultados>]
 aprovado_por: <solicitante>
 aprovado_em: <YYYY-MM-DD>
 versao: 1
@@ -214,8 +213,8 @@ ciclo: <nº>
 ## 6. `diagnostico.md` — escrito pela porta A
 
 Formato completo em `diagnostico.md` (o playbook). Contrato mínimo: frontmatter com `trabalho`,
-`modo` (pipe | documentacao), `cliente`, `pipe_analisado`, `dominio`, `referencias_brain`,
-`diagnosticado_em`, `defeitos`; seções **Resumo executivo**, **Defeitos encontrados** (ou
+`modo` (pipe | documentacao), `cliente`, `pipe_analisado`, `dominio`, `diagnosticado_em`,
+`defeitos`; seções **Resumo executivo**, **Defeitos encontrados** (ou
 **Lacunas**, no modo documentação), **Conformidade**, **Alinhamento à BU**, **Oportunidades** e
 **As-is** (só modo pipe).
 
@@ -239,8 +238,8 @@ phase_id, campos com internal_id, automações e condicionais com id, agentes co
   `diagnostico.md` da mesma sessão já traz o As-is com ids, ele serve: registre isso no changes.
   **Em clone-sandbox, o snapshot é do pipe original** (o que precisa ficar intocado) — é ele que
   permite verificar no fim se alguma escrita escapou para lá.
-- `snapshot-final.md` — **só quando pedido**. Serve para documentar o caso no brain depois; não é
-  requisito de entrega.
+- `snapshot-final.md` — **só quando pedido**. Serve de registro para consulta futura do próprio
+  consultor; não é requisito de entrega.
 
 ---
 
@@ -248,8 +247,8 @@ phase_id, campos com internal_id, automações e condicionais com id, agentes co
 
 | Etapa | Lê | Escreve |
 |---|---|---|
-| Diagnóstico (porta A) | pipe via `AuditPipe` (1 chamada) + brain + documentos do cliente | `diagnostico.md` |
-| Planner | brain + conversa com o solicitante + `diagnostico.md` (porta C) | `spec.md` |
+| Diagnóstico (porta A) | pipe via `AuditPipe` (1 chamada) + `golden_standard_schema.md`/`decision_catalog.md` + documentos do cliente | `diagnostico.md` |
+| Planner | `golden_standard_schema.md`/`decision_catalog.md` + conversa com o solicitante + `diagnostico.md` (porta C) | `spec.md` |
 | Builder | `spec.md` (+ divergências da `conferencia.md` ou correções do `review.md`) | pipe do cliente + `changes.md` (+ `snapshot-as-is.md` na porta C) |
 | Conferência | `spec.md` + `changes.md` + 1 leitura do pipe + leitura iPaaS quando houver integração | `conferencia.md` |
 | Teste funcional (opcional) | `spec.md` + `changes.md` + `conferencia.md` | card de teste (temporário) + runs iPaaS aprovados + `test-results.md` |

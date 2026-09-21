@@ -16,8 +16,34 @@ aprovação explícita antes de qualquer escrita.
 
 ## Instalação
 
-Copie (ou clone) esta pasta para o diretório de skills do Claude Code, mantendo `SKILL.md` na raiz
-e as pastas `references/` e `perks/` intactas ao lado dele:
+O pacote é publicado no npm como [`@pipefy/pipefy-process-builder`](https://www.npmjs.com/package/@pipefy/pipefy-process-builder).
+Três formas de instalar, da mais simples à mais manual:
+
+### Opção A — `npx skills` (recomendado)
+
+O [`skills`](https://www.npmjs.com/package/skills) é uma CLI que instala skills de agente (Claude
+Code, Codex, Cursor etc.) direto de um pacote npm, colocando os arquivos na pasta de skills correta
+sem passos manuais:
+
+```bash
+# no projeto (instala em .claude/skills/)
+npx skills add @pipefy/pipefy-process-builder -a claude-code
+
+# globalmente (instala em ~/.claude/skills/, disponível em qualquer projeto)
+npx skills add @pipefy/pipefy-process-builder -a claude-code -g
+```
+
+Atualizações depois: `npx skills update @pipefy/pipefy-process-builder`.
+
+### Opção B — `npm install` + cópia manual
+
+```bash
+npm install @pipefy/pipefy-process-builder
+```
+
+Depois, copie `SKILL.md`, `references/` e `perks/` de
+`node_modules/@pipefy/pipefy-process-builder/` para o diretório de skills do Claude Code (projeto:
+`.claude/skills/pipefy-process-builder/`; global: `~/.claude/skills/pipefy-process-builder/`):
 
 ```
 <diretório de skills>/pipefy-process-builder/
@@ -29,6 +55,13 @@ e as pastas `references/` e `perks/` intactas ao lado dele:
 └── perks/
     └── create-email-template/
 ```
+
+### Opção C — clonar este repositório
+
+Clone (ou copie) esta pasta diretamente para o diretório de skills do Claude Code, na mesma
+estrutura acima.
+
+---
 
 `perks/create-email-template/` é um wrapper MCP local **opcional**: sem ele, criação de template de
 e-mail cai automaticamente como pendência manual na UI (veja `perks/create-email-template/README.md`

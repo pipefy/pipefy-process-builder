@@ -16,11 +16,8 @@ aprovação explícita antes de qualquer escrita.
 
 ## Instalação
 
-O pacote também é publicado no npm como
-[`@pipefy/pipefy-process-builder`](https://www.npmjs.com/package/@pipefy/pipefy-process-builder).
-Três formas de instalar:
-
-### Opção A — `npm install` + cópia manual (funciona para qualquer pessoa)
+O pacote é publicado no npm como
+[`@pipefy/pipefy-process-builder`](https://www.npmjs.com/package/@pipefy/pipefy-process-builder):
 
 ```bash
 npm install @pipefy/pipefy-process-builder
@@ -40,30 +37,6 @@ Depois, copie `SKILL.md`, `references/` e `perks/` de
 └── perks/
     └── create-email-template/
 ```
-
-### Opção B — `npx skills` (sem cópia manual, mas exige acesso ao repositório privado)
-
-O [`skills`](https://www.npmjs.com/package/skills) é uma CLI que instala skills de agente direto
-de um repositório git, colocando os arquivos na pasta de skills correta sem passos manuais. **Ele
-lê de repositórios git (GitHub/GitLab/etc.), não do registro npm** — então o comando usa o caminho
-do repositório no GitHub, não o nome do pacote npm:
-
-```bash
-# no projeto (instala em .claude/skills/)
-npx skills add ps-pipefy/pipefy-process-builder -a claude-code
-
-# globalmente (instala em ~/.claude/skills/, disponível em qualquer projeto)
-npx skills add ps-pipefy/pipefy-process-builder -a claude-code -g
-```
-
-Como o repositório é **privado**, isso só funciona para quem já tem acesso a ele (via credenciais
-git configuradas, `gh auth login`, ou SSH) — não é uma opção genérica para qualquer consultor, ao
-contrário da Opção A. Atualizações depois: `npx skills update pipefy-process-builder`.
-
-### Opção C — clonar este repositório
-
-Clone (ou copie) esta pasta diretamente para o diretório de skills do Claude Code, na mesma
-estrutura da Opção A.
 
 ---
 

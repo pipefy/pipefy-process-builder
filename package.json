@@ -1,0 +1,19 @@
+{
+  "name": "@pipefy/pipefy-process-builder",
+  "version": "1.0.0",
+  "description": "Claude Code skill for Pipefy Professional Services consultants: diagnose, build, evolve, calculate ROI for, and present a Pipefy process.",
+  "license": "UNLICENSED",
+  "files": [
+    "SKILL.md",
+    "references",
+    "perks",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ps-pipefy/pipefy-process-builder.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

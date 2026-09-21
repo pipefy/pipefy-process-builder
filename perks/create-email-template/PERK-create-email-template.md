@@ -48,7 +48,7 @@ Logo depois da propriedade `interfaces_graphql_url`:
 ```
 
 Deriva de `base_url`, então single-tenant funciona sem nada a mais:
-`https://cmpc.pipefy.com` → `https://cmpc.pipefy.com/graphql/core`.
+`https://<cliente>.pipefy.com` → `https://<cliente>.pipefy.com/graphql/core`.
 
 ### 2. `SDK/queries/webhook_queries.py` — a mutation
 
@@ -309,8 +309,8 @@ $py = "$env:LOCALAPPDATA\PipefyMCP\venv\Scripts\python.exe"
 & $py -c "from pipefy_mcp.tools import registry as r; print('create_email_template' in open(r.__file__, encoding='utf-8').read())"
 
 # a URL do core deriva certo do host?
-& $py -c "from pipefy_sdk.settings import PipefySettings; s=PipefySettings(base_url='https://cmpc.pipefy.com'); print(s.core_graphql_url)"
-# -> https://cmpc.pipefy.com/graphql/core
+& $py -c "from pipefy_sdk.settings import PipefySettings; s=PipefySettings(base_url='https://<cliente>.pipefy.com'); print(s.core_graphql_url)"
+# -> https://<cliente>.pipefy.com/graphql/core
 ```
 
 No Claude, depois de reiniciar: peça `create_email_template` num pipe de teste.

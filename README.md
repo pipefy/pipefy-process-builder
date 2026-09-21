@@ -4,13 +4,6 @@ Skill do Claude Code para consultores de Professional Services da Pipefy. Conduz
 conversa, o diagnóstico, a criação ou a evolução de um processo (pipe) no Pipefy do cliente —
 do pedido inicial até a entrega, com aprovação explícita antes de qualquer escrita.
 
-## Regra de ouro deste repositório
-
-**Não commitar nada que identifique um cliente** — nome de empresa, dados de pipe real, prints,
-IDs de organização, etc. Os arquivos de trabalho (`spec.md`, `diagnostico.md`, `changes.md`...)
-gerados durante o uso da skill ficam em `builds/`, **fora deste repositório** (veja abaixo), exatamente
-para não misturar artefato de sessão com o pacote da skill.
-
 ## Pré-requisitos
 
 - **Claude Code** com acesso ao **connector MCP do Pipefy** habilitado e autorizado na organização

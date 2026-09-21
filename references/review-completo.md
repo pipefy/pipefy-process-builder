@@ -39,6 +39,9 @@ Leia antes: `handoff-schemas.md` (todas as seções), `nomenclature.md` e
 - Integrações iPaaS: flow no pipe dono correto, conexões apenas reutilizadas, procedência dos data
   pills documentada (`shape_verified` antes de publicar), validação e run documentados sem segredos,
   e publicação/habilitação compatível com a aprovação explícita.
+- iPaaS: `custom_api_call` só com decisão fechada que cite a lista de ações nativas lida; nenhum
+  segredo em handoff.
+- Agentes: instrução igual à do spec (`agentes/<nome>.md`), com critérios e saídas explícitos.
 
 **2. Coerência spec × construção × testes** — o pipe entrega o que o spec prometeu? Os desvios
 declarados no changes são justificados ou escondem trabalho não feito? Se houve teste funcional, ele
@@ -54,6 +57,10 @@ essencial da entrega? Duas verificações obrigatórias aqui:
 - **Alguma pendência é falsa?** Confira em `connector-rules.md` (seção 4.2) se o Builder não
   registrou como "manual" algo que a API faz — segurança do pipe e campo de título, por exemplo, são
   configuráveis. Pendência inventada é trabalho manual desnecessário empurrado ao consultor.
+
+**4. Artefatos das portas D e E (se existirem)** — `roi.md` com `status` coerente com os dados
+(nenhum valor sem origem em `roi-inputs.md`; modo rotulado); `deck.md` com QA preenchido e todos os
+números rastreáveis a `diagnostico.md`/`roi.md`.
 
 ## Veredito
 

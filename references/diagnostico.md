@@ -17,13 +17,15 @@ Dois modos, conforme o que o consultor tem em mãos:
 
 ## Modo 1 — Auditar um pipe existente (o caso comum)
 
-### 1. Leitura (2 a 3 chamadas, nunca mais)
-Peça a URL ou o id do pipe. Rode a query `AuditPipe` de `graphql-recipes.md` (seção 1), a query de
-automações **com a condição de disparo** (seção 5 — `get_automations` omite a condição, e diagnóstico
-de automação sem ver a condição é chute) e, se houver, `get_ai_agents(repo_uuid=...)`. Está tudo lá:
-fases, campos, condicionais com regra e ações completas, movimentos permitidos, defaults de
-segurança, campo de título, conexões com outros pipes e **webhooks** — o rastro das integrações
-externas do pipe. **Nunca** varra `get_phase_fields` por fase.
+### 1. Leitura (3 a 6 chamadas, todas paginadas até o fim)
+Peça a URL ou o id do pipe e **confira o host** (single tenant exige MCP próprio —
+`connector-rules.md`, §1). Rode `AuditPipe` (`graphql-recipes.md`, §1; variantes Core/Conditions em
+pipe grande), a query de automações **paginada** (§5 — `get_automations` corta em 50 e já fez uma
+conferência reprovar um build inteiro), `aiAgents` paginado (§8.4 — a tool devolve 10 de 22 sem
+aviso) e, **sempre que o pipe tiver iPaaS habilitado**, `get_ipaas_tools(pipe_id)` +
+`ap_list_flows` + `ap_list_runs` dos flows publicados: um pipe já teve 7 receitas invisíveis ao
+diagnóstico no primeiro prompt. Declare no relatório "lidos N de N" para cada lista. **Nunca** varra
+`get_phase_fields` por fase.
 
 ### 2. Varredura de defeitos (faça isto primeiro)
 É o achado de maior valor: coisas que estão **quebradas agora**, não só fora do padrão. Muitas
@@ -70,13 +72,44 @@ Procure explicitamente:
 - **Select sem opções**, campos duplicados com o mesmo rótulo em fases diferentes sem razão,
   campos não editáveis que uma automação tenta preencher.
 - **Agente de IA em estado indevido** — inativo quando deveria rodar, ou **ativo sem o cliente
-  querer**: editar um agente religa o que estava desligado, então agente ativo consumindo crédito e
+  querer**: editar um agente pode religar o que estava desligado, então agente ativo consumindo crédito e
   agindo nos cards sem ninguém pedir é achado de severidade alta.
 - **Segurança** — pipe público sem necessidade, `only_assignees_can_edit_cards` desligado,
   `only_admin_can_remove_cards` desligado, formulário inicial aberto além do previsto. Tudo isso é
   corrigível via API (`graphql-recipes.md`, seção 6), então entra como recomendação acionável.
 - **Título do card** — se o pipe usa o primeiro campo como título automático em vez de um campo
   definido, os cards saem com títulos errados. `title_field_id` resolve.
+- **Automação que "roda" e não faz nada** — `success` no log é só "avaliada": cruze com o efeito no
+  card ou na caixa de entrada (`connector-rules.md`, §4.5). Valor gravado fora da fase da automação
+  gera sucesso sem efeito. `executionMetrics` zerado não prova inatividade — conte em
+  `automationLogsByRepo` (§8.5).
+- **Condicional que nunca dispara** — `field_address` com slug (deve ser `internal_id`), campo da
+  condição em fase diferente dos campos das ações, ou `hide` sobre campo obrigatório.
+- **Agente que nunca dispara** — `card_moved` apontando para a primeira fase (é `card_created`);
+  `referencedFieldIds` de campo inexistente; agentes v1 ativos concorrendo com v2 no mesmo campo.
+- **Segredo em código de flow** — Bearer token, client id/secret ou usuário/senha literais em step de
+  código ou trigger de webhook. É achado de segurança alta: registre **onde**, nunca o valor, e
+  recomende Connection.
+
+### 2.5 Lint estrutural (cruzamentos que nenhuma tool faz)
+Com a leitura em mãos, cruze e liste como defeito o que aparecer — quatro consultores pediram uma
+tool de lint; até ela existir, o lint é seu:
+1. duas automações **ativas escrevendo o mesmo campo** (guerra de valores/etiquetas);
+2. automação de **mover card sem escopo de fase** (dispara em qualquer fase);
+3. gatilho ou ação apontando para **campo/fase apagados** (`triggerFieldIds`, `to_phase_id`,
+   `field_map`);
+4. `to_phase_id` **igual à fase de origem** (auto-referência);
+5. valor de condição **fora de `options`** do campo select;
+6. condicional **sem ação**, ou com ação em fase diferente do campo da condição;
+7. campo **obrigatório oculto** por condicional;
+8. automação `active: false` **sem tag** `[Inativo]` no nome;
+9. fase **sem saída** e fluxo sem fase `done`;
+10. **rótulo ≠ slug** em campos usados por integração (`valor_sem_imposto_4` rotulado "LTCAT") — não é
+    defeito por si, é aviso de endereçamento;
+11. automação de atribuição com `fields_map_order` preenchido e `field_map` vazio (clone que perdeu
+    o responsável);
+12. flow iPaaS **publicado com runs falhando** ou com zero runs.
+Em pipe de **controles** (cada controle uma rota), leia cobertura **por rota**, não por transição.
 
 ### 3. Diagnóstico em três camadas
 Depois dos defeitos, avalie o desenho. Cada achado vem com recomendação:
@@ -92,8 +125,12 @@ Depois dos defeitos, avalie o desenho. Cada achado vem com recomendação:
 
 ### 4. Entrega
 Escreva `diagnostico.md` na pasta de trabalho (formato abaixo) e apresente no chat um resumo
-executivo: quantos defeitos por severidade, os 3 achados mais importantes e a pergunta se ele quer
-transformar algo em plano de correção (porta C).
+executivo: quantos defeitos por severidade, os 3 achados mais importantes, os totais lidos ("178 de
+178 automações; 22 de 22 agentes; 7 flows"), e as três continuações possíveis, sem empurrar: **porta
+C** (plano de correção), **porta D** (ROI do processo, a partir deste diagnóstico) e **porta E** (deck
+para o cliente, a partir deste diagnóstico e, se houver, do ROI). Antes de classificar algo como
+defeito, confira a especificação do cliente quando ela existir — "cabeçalho errado" num template que
+a spec não define não é defeito.
 
 ---
 
@@ -133,6 +170,7 @@ defeitos: <número>
 ```
 
 1. **Resumo executivo** — 3 a 5 linhas: estado geral e o que exige ação imediata.
+   Toda contagem declara "lidos N de N".
 2. **Defeitos encontrados** — tabela: `# | Severidade (Crítico/Alto/Médio/Baixo) | Onde (fase/
    campo/automação + id) | O que está errado | Impacto para o usuário | Correção recomendada`.
    Ordenada por severidade. No modo documentação, esta seção vira **Lacunas**.
@@ -141,7 +179,10 @@ defeitos: <número>
 4. **Alinhamento à BU** — o que falta e o que sobra em relação ao padrão canônico do domínio.
 5. **Oportunidades** — variações e agentes de IA de `decision_catalog.md` que couberem, com a
    variação de referência citada.
-6. **As-is** (só modo pipe) — estrutura normalizada no formato das seções 2 a 6 do spec (fases,
+6. **Integrações iPaaS** (só modo pipe) — tabela: `Flow | flow_id | Estado (publicado/rascunho/
+   desabilitado) | Runs recentes (ok/falha) | Conexões | Observações (segredo em código: onde, sem
+   valor)`.
+7. **As-is** (só modo pipe) — estrutura normalizada no formato das seções 2 a 6 do spec (fases,
    campos, automações, condicionais, agentes, **conexões** — databases/tabelas/pipes relacionados —
    e webhooks/flows, com ids reais). É o que permite virar plano de deltas na porta C sem reler o
    pipe — e é o que impede a porta C de propor estrutura paralela ao que já existe (já se criou
@@ -153,4 +194,5 @@ defeitos: <número>
 - Severidade é sobre impacto no usuário do processo, não sobre elegância do modelo.
 - Não invente padrão: o que não estiver em `golden_standard_schema.md` nem `decision_catalog.md`,
   rotule como sugestão sua.
-- Disciplina de custo: 2 a 3 chamadas para ler o pipe. Nunca varra fase por fase.
+- Disciplina de custo: 3 a 6 chamadas, paginadas, para ler o pipe. Nunca despeje a base inteira nem
+  varra fase por fase.

@@ -31,6 +31,10 @@ custo do build**. Portanto:
 - **Verificação em 1 query** (`graphql-recipes.md`, seção 1), nunca `get_phase_fields` por fase.
 - Automações, condicionais e agentes continuam nas tools dedicadas — ali a normalização de payload
   vale mais que a economia.
+- **Toda listagem pagina até o fim** e o `changes.md` registra "lidos N de N"; verificação pontual
+  usa `automation(id:)` com aliases (`graphql-recipes.md`, §8.2).
+- **Wrapper que falha 2 vezes com payload correto → GraphQL cru com introspecção**
+  (`connector-rules.md`, §4.10). Nunca a terceira tentativa igual.
 
 ## Porta B — construir do zero
 Sempre construa do zero — nunca clone um pipe existente. **Ordem obrigatória**, porque cada etapa
@@ -63,38 +67,49 @@ que existe e o que falta e continue de onde parou.
    tiver campo de conteúdo dinâmico/statement, siga **a receita da seção 4.9 de
    `connector-rules.md`** — o tipo aparente (`dynamic_content`) corrompe a UI da fase, e o
    `statement` só funciona com label, description e token no formato exato.
-5. **Condicionais.** O `phase_id` que a criação espera é o da fase virtual Start form
-   (`startFormPhaseId`) — a plataforma indexa toda condicional lá, seja qual for a fase pretendida.
-   Preencha **sempre** o valor de comparação (sem ele a regra nunca dispara) e nunca ponha if-true
-   e if-false no mesmo grupo: dois desfechos são duas regras. Depois de criar, **releia
-   `pipe.fieldConditions`** (a query da seção 1 já traz expressões e ações) e confirme que a regra
-   existe, tem valor preenchido e as ações apontam para os campos certos no ramo certo
-   (`whenEvaluator`) — este objeto é conhecido por responder "criado com sucesso" e não persistir.
-   Não estranhe o atributo `phase` = Start form na releitura: é indexação da plataforma, não erro
-   (ver `connector-rules.md`, seção 4.3). Uma condicional "hide-all" por fase quando o spec pedir.
+5. **Condicionais.** `field_address` e `phaseFieldId` são **`internal_id`** numérico — slug é aceito,
+   persiste e a regra nunca dispara (3 ciclos perdidos num build). O campo da condição e os campos
+   das ações precisam estar na **mesma fase**; a tool recusa `hide` sobre campo obrigatório (torne-o
+   não obrigatório ou reestruture). O `phase_id` enviado é o `startFormPhaseId` do **pipe alvo desta
+   sessão** — id de outro pipe (referência, origem de migração) grava a condicional lá (aconteceu em
+   produção). Preencha o valor de comparação; if-true e if-false são duas regras; hide-all é
+   `current_phase present OR blank` (`connector-rules.md`, §4.3) e não pode ser renomeada depois.
+   Depois de criar, releia `fieldConditions` **e** peça confirmação visual na entrega: releitura prova
+   persistência, não comportamento.
 6. **Automações.** Siga a regra 3 de connector-rules.md: payload simples, `active=false` para
    testar, verificação após timeout, e o que não der vira pendência manual documentada. A
    combinação evento×ação de cada automação já foi validada no spec (Planner, contrato de
    entregabilidade); se o catálogo recusar mesmo assim, não force variações às cegas — registre o
    desvio. Os shapes de escrita que funcionam estão em `connector-rules.md`, seção 4.4. Ao
    terminar, confirme que **a condição foi salva e a automação ficou ativa** — use a query da seção
-   5 de `graphql-recipes.md`, porque `get_automations` não mostra a condição.
-7. **Templates de e-mail.** A API **não cria** template — só lê e envia (não existe mutation de
-   criação no schema; confirmado por introspecção). Se o spec pedir template novo, registre a
-   pendência manual **com o conteúdo pronto para colar** (assunto + corpo) e deixe a automação de
-   envio para a retomada: quando o template existir na UI, ela é uma chamada de `create_automation`
-   com o `email_template_id` resultante — ofereça isso explicitamente na entrega.
+   5 de `graphql-recipes.md`, porque `get_automations` não mostra a condição. Antes de ativar uma
+   automação nova em pipe com cards, rode `simulate_automation` quando a ação for suportada — e
+   nunca use `last_phase_in` como "fase atual" (é a fase **anterior**; travou cards em produção).
+   Desativar exige releitura: `active: false` já foi ignorado com resposta de sucesso. Confirme por
+   leitura paginada, não pela primeira página.
+7. **Templates de e-mail.** Depende do inventário do pré-check. **Com `create_email_template`** (perk
+   local — `connector-rules.md`, §4.11): crie cada template do spec (nome oficial, HTML, `pt-BR`,
+   `America/Sao_Paulo` em processo brasileiro), releia `get_email_templates` e crie a automação
+   `send_email_template` com o id. **Sem a tool**: pendência manual com assunto + corpo prontos para
+   colar (arquivo `emails/<nome>.html` na pasta de trabalho), automação de envio na retomada, e a
+   entrega aponta para `perks/create-email-template/README.md`. Datas de `datetime`/`due_date` saem em
+   formato americano no e-mail — avise no changes.
 8. **Agentes de IA**, por último — sempre na aba de Agentes (`create_ai_agent`), nunca como
    automação com ação de IA. Leia antes a **seção 4.7 de `connector-rules.md`**: é o objeto com
    mais armadilhas do conector. Em resumo: o gatilho é entrada na fase ou um campo select dedicado
    (se o spec não fixou o gatilho e faltar um campo, **pergunte ao consultor** — não crie por
-   conta); `validate_ai_agent_behaviors` é lint, não garantia; não envie `id`/`referenceId` nos
-   behaviors; instrução tem teto de 10.000 caracteres; a linha `%{action:...}` é a plataforma que
-   insere ao salvar. Depois de criar, **releia o agente** e confira behaviors e campos de saída
+   conta); `validate_ai_agent_behaviors` é lint, não garantia; na criação pela tool dedicada, não
+   envie `id`/`referenceId` nem o token `%{action:...}` (§4.7 a); instrução tem teto de 10.000
+   caracteres; a linha `%{action:...}` é a plataforma que insere ao salvar. Depois de criar,
+   **releia o agente** e confira behaviors e campos de saída
    contra o spec — criação que falhou pode ter deixado agente parcial (corrija por update, nunca
-   crie duplicata). **Todo agente nasce ativo:** se o spec não pediu o agente ativo, desative-o
-   logo após criar (`toggle_ai_agent_status`). Agente ativo sem o cliente saber consome crédito e
-   age nos cards.
+   crie duplicata). **Leia o estado após criar** (já nasceu ativo e já nasceu desativado) e ajuste
+   ao spec com `toggle_ai_agent_status`. Agente ativo sem o cliente saber consome crédito e age nos
+   cards. Copie a instrução **do spec** (arquivo `agentes/<nome>.md`), não a reescreva. Gatilho na
+   primeira fase é `card_created`. Em todo update reinjete `capabilitiesAttributes` (§4.7); no
+   `updateAiAgent` cru (fallback da §4.10) gere `referenceId` novo por ação com o token
+   `%{action:<uuid>}` e omita `id` (§4.7 b); no wrapper `update_ai_agent` nunca reenvie os tokens
+   `%{action:...}` já inseridos (§4.7 c).
 9. **Configuração do pipe** (`graphql-recipes.md`, seção 6): pipe privado, formulário inicial
    restrito, edição pelo responsável, exclusão por admin, e `title_field_id` apontando para o campo
    que deve ser o título (senão o Pipefy usa o primeiro campo e o título "muda sozinho"). Isso
@@ -102,7 +117,10 @@ que existe e o que falta e continue de onde parou.
 10. **Verificação final:** rode a query `AuditPipe` (`graphql-recipes.md`, seção 1) **uma vez** e
     compare com o spec — exatamente as fases e campos acordados, nada sobrando, condicionais nas
     fases certas. Divergência que você mesmo causou: corrija (máximo 2 tentativas) ou registre como
-    desvio no changes.
+    desvio no changes. Listagens paginadas até o fim; totais no changes.
+10.5 **Se você criou card de teste ou disparou automação, espere a cascata assentar** (2–3 min;
+     `phases_history` até duas leituras iguais — `graphql-recipes.md`, §8.6) antes de ler o resultado.
+     Ler a 90 s já produziu FAIL com a causa errada.
 11. **Ligação das fases — a pendência que não pode passar em branco.** A API não configura para
     onde um card pode ir (`cards_can_be_moved_to_phases` não tem mutation). Sem isso o pipe fica
     **inutilizável**: estrutura completa, nenhum card andando. Use a leitura do passo 10 para
@@ -113,7 +131,10 @@ que existe e o que falta e continue de onde parou.
     item como parcial se ela não existir), construa o rascunho e valide-o. **O default não é
     construir do zero:** havendo flow parecido no mesmo pipe, duplique e adapte (religando a conexão,
     que o duplicate não copia); flow novo vai em `ap_build_flow`, que não configura router — a espinha
-    primeiro, routers e branches depois, no granular. Ver `ipaas.md`, passo 2. Para cada data pill, siga
+    primeiro, routers e branches depois, no granular. Ver `ipaas.md`, passo 2. Antes de editar um
+    step existente, leia a tabela **Armadilhas das tools ap_\*** e rode o
+    **Checklist pós-edição de step** de `ipaas.md` depois. Edite o step que o consultor indicou;
+    se não for possível, diga antes de mudar a estrutura. Para cada data pill, siga
     a **ordem de evidência** do passo 1.5 de `ipaas.md` — campo Pipefy resolve pela leitura do pipe
     (nunca por teste do step), campo de piece pelo schema dela, amostra de execução só na falta dos
     dois —, registre a fonte e marque `shape_unverified` quando o path não for comprovado; pergunte
@@ -146,10 +167,11 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
    nada. **Nenhuma alteração sem esse arquivo.**
    > Se o `diagnostico.md` da pasta já traz a seção As-is com ids reais e foi gerado nesta sessão,
    > ele serve de snapshot: registre isso no changes em vez de reler o pipe.
-2. **Se a estratégia do spec for clone-sandbox — leia a seção 5 de `connector-rules.md` antes de
-   qualquer coisa.** Este é o cenário mais perigoso do fluxo: já houve incidente real de alterações
-   caindo **no pipe original em vez do clone**, quebrando automação de pipe vivo, mesmo com instrução
-   explícita de mexer só no clone. Protocolo:
+2. **Se houver mais de um pipe na sessão — clone, migração entre orgs, pipe de referência, single
+   tenant — leia a seção 5 de `connector-rules.md` antes de qualquer coisa.** Este é o cenário mais
+   perigoso do fluxo: já houve incidente real de alterações caindo **no pipe original em vez do
+   clone**, quebrando automação de pipe vivo, mesmo com instrução explícita de mexer só no clone.
+   Protocolo:
    - Clone o pipe. **O clone é assíncrono:** a resposta pode vir sem as fases.
    - **Releia o clone** (`AuditPipe` com o novo `pipe_id`) até as fases existirem, e a partir daí use
      **exclusivamente** os `phase_id` e `internal_id` dessa leitura. Nunca reaproveite id lido antes
@@ -161,11 +183,17 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
      registre o que mudou com ids e **avise imediatamente** o responsável pelo pipe.
    - Registre no changes o id/url do clone e a confirmação explícita de que o original foi verificado
      e está intocado.
+   - Em migração/recriação, slugs **não** se preservam: mapeie por rótulo + tipo e confira o slug
+     real antes de `updateCard`; leia `userErrors`.
+   - Clone perde referência de responsável nas automações e não clona databases: inventarie os dois
+     logo após clonar.
 3. **Mapeie cards por fase** antes de mexer. Aplique os deltas do spec na ordem Adicionar →
-   Alterar → Remover. Para `Remover` sobre estrutura com dados: o spec deve trazer a confirmação
+   Alterar → Remover. Preenchimento de valores de card (`fill_card_phase_fields`/
+   `updateFieldsValues`) em lotes de **≤ 20 campos** — o limite não é documentado e falha no meio.
+   Para `Remover` sobre estrutura com dados: o spec deve trazer a confirmação
    registrada; sem ela, aplique o default (renomear com tag `[Inativo]` + descrição "Não deletar")
    e registre o desvio. Campos nunca são deletados com dados — inative.
-4. **Agentes de IA existentes: preserve o estado.** Editar um agente **religa** um agente que
+4. **Agentes de IA existentes: preserve o estado.** Editar um agente **pode religar** um agente que
    estava desligado (o `update` zera o `disabledAt`). Antes de tocar em qualquer agente, registre se
    ele estava ativo ou inativo, e **restaure o estado original depois** da edição. Um agente
    voltando a rodar sem ninguém pedir consome crédito e age nos cards do cliente em produção.
@@ -193,11 +221,12 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
    ligação das fases, se houver. Quem lê tem que saber, sem procurar, o que falta fazer na UI para
    o processo funcionar.
 4. Devolva ao orquestrador: pipe (id/url), status (COMPLETO/PARCIAL), **o que exatamente você
-   configurou** (não "pronto" nem "resolvido": diga fases, campos, gatilhos e ações, em 3 a 6
-   linhas) e a pasta de trabalho — pronto para a conferência.
+   configurou e como verificou** (fases, campos, gatilhos e ações, totais lidos vs. esperados; "se
+   houver problemas me avise" não é fechamento) e a pasta de trabalho — pronto para a conferência.
 
 ## Guardrails
 - O spec é lei. Fora do spec, nada — nem refatoração, nem melhoria não pedida.
+- **Instrução de local é lei:** o consultor apontou o objeto, você altera aquele objeto.
 - **Estrutura nova que o spec não previu é pergunta, não desvio.** Se o build "precisar" de um
   campo, fase ou objeto fora do spec (ex.: campo de gatilho para um agente), pare e pergunte ao
   consultor antes de criar. Registrar como desvio depois de criado tira dele a chance de orientar —
@@ -215,6 +244,8 @@ manual — mas confira antes na seção 4.2 se não é um caso que **parece** im
 - **iPaaS não recebe retry cego.** `call_ipaas_tool` pode ter executado o flow mesmo quando a resposta
   falha ou expira; leia o flow, runs ou run específico antes de retomar. Delete, retry, publish,
   enable e teste com efeito externo exigem intenção explícita, não são tentativas de correção.
+- **Timeout não vira loop:** uma releitura; inconclusivo → devolve o controle ao consultor
+  (`connector-rules.md`, §3).
 - **Verifique o que você escreveu.** Condicional, automação e agente de IA são objetos que já
   reportaram sucesso sem persistir. Reportar "criado e verificado" sem ter relido é o pior defeito
   possível neste papel: contamina o relatório de entrega e todos que confiam nele.

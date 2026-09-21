@@ -36,6 +36,12 @@ segredos, e exigem um fluxo de autorização próprio.
   flow "mock" como se ele funcionasse: entregue o blueprint dos passos e mapeamentos para retomada.
 - Nunca copie segredo, token, URL OAuth de retorno ou conteúdo sensível para arquivos de handoff.
 
+**Isso já foi violado em build real** — um flow ganhou uma Service Account e uma conexão criadas
+pela própria skill com credenciais da sessão. Não há exceção: conexão nova é pendência manual com
+link, mesmo quando "só falta isso". E antes de declarar pendência por fornecedor externo (ex.:
+conversão de arquivo via CloudConvert), avalie com o consultor a alternativa em **step de código**
+sem conexão externa — foi assim que um TC concluiu uma integração que a skill deixou parcial.
+
 ## Ciclo de vida do fluxo
 
 1. **Descobrir.** Pesquise as pieces e leia os schemas de trigger, ações, conexões e opções que o
@@ -74,8 +80,8 @@ segredos, e exigem um fluxo de autorização próprio.
    que ainda tenha expressão `shape_unverified`.
 
    **`FieldTypeId` → propriedade de `CardField`.** É a propriedade que carrega o valor de cada campo
-   do card. `getCardById` devolve **todos** os campos, customizados incluídos, indexados por fase e
-   por slug — `data.card.fields_by_phase.<fase>.fields.<slug>.<propriedade>` (ver
+   do card. `getCardById` devolve **todos** os campos, customizados incluídos, indexados por
+   slug — `data.card.fields.<slug>.<propriedade>` (ver
    `connector-rules.md`, seção 4.2). Consulte aqui em vez de reintrospectar o schema GraphQL a cada
    build:
 
@@ -103,7 +109,7 @@ segredos, e exigem um fluxo de autorização próprio.
 
    | Step | Envelope de `output` |
    |---|---|
-   | `pipefy:getCardById` | `data.card.fields_by_phase.<fase>.fields.<slug>.<propriedade>` |
+   | `pipefy:getCardById` | `data.card.fields.<slug>.<propriedade>` — a forma `fields_by_phase` não existe no tipo Card |
    | `pipefy:getCardsByFieldValue` | `data.cards[]`, e dentro de cada card `fields.<slug>.value` |
    | `pipefy:createCard` | `data.createCard.card.id` |
    | `pipefy:custom_api_call` | `body.data.<mutation>.…` — **um nível `body` a mais** que as ações nativas |
@@ -152,6 +158,22 @@ segredos, e exigem um fluxo de autorização próprio.
      aninhado vai na mesma chamada, com `parentStepName` e `stepLocationRelativeToParent`.
    - **Editar flow existente → nunca reconstrua.** Use `ap_add_step`, `ap_update_step` e
      `ap_update_trigger`.
+
+   **O step que o consultor indicou é o step que você edita.** Implementar a lógica certa em steps
+   novos, deixando o step indicado intocado, já foi relatado como defeito — a estrutura final não era
+   a pedida. Se a alteração não couber naquele step, **diga antes** de mudar a estrutura.
+
+   **Um flow tem um único gatilho.** Trocar `cardFieldUpdated` por `cardMoved` significa um flow novo
+   (ou duplicar via `ap_duplicate_flow` e trocar o trigger) — diga isso ao consultor antes, e não
+   mantenha os dois critérios "por segurança" quando o pedido foi substituir. `cardFieldUpdated` não
+   tem parâmetro de fase.
+
+   **Erro que não deve interromper o flow tem estrutura própria, não é um IF manual.** Antes de
+   montar um router "se falhou, faça X" em torno de um step que pode falhar de forma esperada
+   (chamada externa opcional, parsing best-effort), procure primeiro a opção de continuar em caso de
+   falha nas próprias props do step — ela guarda os ramos de sucesso e erro dentro do step, sem step
+   extra nem router. Confirme o nome exato do parâmetro por `ap_get_piece_props` daquele step antes
+   de assumir que não existe; monte o router manual só quando genuinamente não houver essa opção.
 
    **`ap_build_flow` não configura router.** Branch e condição não são configuráveis nessa chamada.
    Construa a espinha sem router, depois adicione cada router com `ap_add_step` e cada branch com
@@ -216,6 +238,73 @@ segredos, e exigem um fluxo de autorização próprio.
    flow validado e testado como rascunho pronto para publicação. Após publicar, releia o flow ou
    estado de execução para confirmar o status ativo.
 
+## Subflows — flow chamado por outro flow
+
+Subflow é um flow comum promovido a "função reutilizável": o trigger **Callable Flow** o torna
+chamável, e outro flow o invoca pela piece **Subflows** (`Call Flow` para uma chamada, `Stream CSV
+to Subflows` para fan-out em lote a partir de um CSV, `Respond` para o subflow devolver dado ao
+chamador). Não é uma tool `ap_*` própria — é uma piece como outra qualquer no catálogo; busque por
+"Subflow" / "Call Flow" com `ap_research_pieces` antes de montar um `custom_api_call` para replicar
+o que ela já faz.
+
+Use quando o spec pedir a mesma lógica disparada por mais de um trigger ou mais de um pipe (ex.:
+"notificar o requisitante" chamado tanto por criação de card quanto por webhook externo) —
+construir a lógica uma vez como subflow evita duplicar steps em cada flow chamador.
+
+Comportamentos que a UI não deixa óbvios pelo nome da action:
+
+- **Sem espera, é *fire-and-forget*.** `Call Flow` sem "wait for response" retorna assim que o
+  webhook do subflow é confirmado, não quando o subflow termina. Se o spec exige saber o resultado
+  (sucesso, dado de volta), a chamada precisa esperar resposta — o subflow devolve pela action
+  `Respond`, e só então o step pai segue.
+- **Retry não rechama um subflow que já respondeu.** Com espera habilitada, reexecutar o step depois
+  que o subflow já respondeu erro apenas repete a resposta guardada — não dispara o subflow de novo.
+  Não trate "tentar de novo" como diagnóstico depois de uma resposta de erro já recebida.
+- **Fan-out (`Stream CSV to Subflows`) nasce sem retry, de propósito.** Reexecutar do zero
+  reprocessaria o CSV inteiro e duplicaria os lotes já despachados — por isso essa action não
+  oferece "tentar de novo" como as demais. É "pelo menos uma vez", sem fan-in e sem rollback: se um
+  lote falhar no meio, os lotes já disparados continuam rodando de qualquer forma. Não simule esse
+  retry manualmente reeditando o step.
+- **Teto de tempo é do step pai, não do subflow isolado.** O timeout padrão do flow conta para o
+  fan-out inteiro; planeje o volume do CSV antes de escolher essa action em vez de descobrir o
+  limite em produção.
+- **Tamanho de lote tem dois limites, e o que bate primeiro não é o anunciado.** O parâmetro de lote
+  aceita um teto alto de linhas, mas o limite prático costuma ser o corpo do webhook — um CSV com
+  muitas colunas pode falhar bem antes de chegar no teto de linhas. Não assuma que só a contagem de
+  linhas importa.
+- **Flow desabilitado como alvo de "Callable Flow" falha na primeira tentativa.** Confirme o status
+  do flow alvo antes de apontar a chamada para ele, sobretudo se ele não foi construído nesta mesma
+  sessão.
+
+## Armadilhas das tools ap_* (leia antes de editar um flow)
+
+Observadas em builds reais de setembro/2026. Cada uma custou horas ou quebrou flow em produção.
+
+| Tool / objeto | Armadilha | O que fazer |
+|---|---|---|
+| `ap_add_step` | parâmetro é **`stepType`**, não `type`; `actionName: null` explícito é recusado — omita a chave; erro "added but still invalid" não nomeia a prop (`phaseFields` DYNAMIC precisa ir mesmo vazio) | conferir nomes em `ap_get_piece_props` antes da 1ª chamada |
+| `ap_update_step` | **dois merges não documentados**: na raiz faz merge por chave (`null` não remove); em objeto aninhado **substitui tudo** (apagou valor real de `aux_label_aprovador_1`). Propriedade inválida herdada não sai por update | ler o step inteiro antes; reenviar o objeto aninhado completo; para remover chave, `ap_delete_step` + `ap_add_step` |
+| edição de step | pode subir `pieceVersion` (0.2.0→0.2.1) e **renomear o step** (`step_2`→`step_8`) sem aviso, quebrando `{{step_2[...]}}` downstream; `ap_validate_flow` reporta "7 valid" | após editar, reler `ap_flow_structure` e conferir **todas** as referências ao step |
+| `ap_add_step`/`ap_update_step` em prop DYNAMIC | step nasce com `propertySettings: {}` — "válido" e **não aplica o valor**; `ap_validate_flow` disse "22 valid" | reler settings; se vazio, mapear na UI e registrar como pendência manual |
+| ROUTER inserido em flow existente | a cadeia sucessora fica "after parent", **fora de qualquer branch**; publicado assim, o resto do flow fica inacessível | após inserir, mover sucessores com `INSIDE_BRANCH` + `branchIndex` e validar branches |
+| ROUTER novo | nasce com **branch vazia sem condição na posição 0**, que "ganha" a avaliação | apagar ou condicionar a branch 0 antes de validar; `confirm`/`confirmation_token` são parâmetros de **topo** da chamada |
+| step logo após ROUTER sem branch | roda para **todas** as branches | `INSIDE_BRANCH` + `branchIndex` |
+| `pipefy:updateCard` | aceita `phaseId` e **nunca move** o card (`success: true`) | mover é `moveCard` |
+| `ap_test_step` | pode usar **amostra em cache** em vez do `triggerTestData` informado, sem avisar; falha com `API Error` sem status | conferir o id do card na saída; repetir só com intenção explícita |
+| `ap_test_flow`/`ap_test_step` "mock" | só o **envelope** é simulado — leitura do card, geração de PDF, escrita de anexo e chamadas pagas são **reais** | declarar ao consultor o efeito exato antes de rodar; dados descartáveis |
+| `ap_lock_and_publish` | **publicar = habilitar**, inclusive flow desabilitado há tempo; não existe "publicar desligado" | aprovação de publicação inclui "vai ficar ativo"; se não for a intenção, não publique |
+| `ap_read_step_code` | devolve o código **escapado duas vezes** (~19 k chars/step) | decodificar programaticamente (JSON parse duplo), nunca transcrever à mão |
+| `ap_update_step` com `sourceCode` | exige o código **inteiro** (~40 k chars com base64 e cláusulas) | reconstruir por substituição ancorada + diff; compilar (`tsc --noEmit`/`node`) quando houver; teste unitário das funções alteradas |
+| `ap_get_piece_props`/`ap_resolve_property_chain` | `auth` só como `externalId` puro (não `{{connections['...']}}`); prop DYNAMIC pode não resolver mesmo com org/pipe/phase | usar `externalId`; slugs vêm da leitura do pipe, não da tool |
+| `ap_list_flows` | não devolve pasta (`folderId`) | não inferir pasta por nome de fornecedor |
+| `ap_flow_structure` / código de step | pode expor **Bearer tokens e client secrets reais** em texto puro | nunca reproduzir em handoff, relatório ou deck; registrar como achado de segurança e recomendar Connection |
+| `call_ipaas_tool` | saída grande vira arquivo com JSON escapado numa linha | processar com script, não reler no contexto |
+
+**Checklist pós-edição de step** (obrigatório antes de validar): (1) `ap_flow_structure` relido e
+todas as referências ao step conferidas; (2) `propertySettings` preenchido em toda prop DYNAMIC;
+(3) versão da piece registrada no `changes.md`; (4) branch 0 de cada ROUTER conferida; (5) nenhum
+segredo copiado para fora do flow.
+
 ## Falhas, retomada e segurança
 
 - `call_ipaas_tool` pode executar mesmo quando há timeout ou erro de transporte. Nunca repita a
@@ -234,6 +323,11 @@ segredos, e exigem um fluxo de autorização próprio.
   recebem efeito. Não deduza o alvo pelo nome.
 - A conferência estrutural checa somente o flow e seus estados no iPaaS; comportamento em sistema
   externo é evidência de teste funcional, não suposição.
+- **Flow que parece vazio na UI pode ser um draft fantasma, não uma build que falhou.** O motor por
+  trás do iPaaS sempre abre a versão mais recente por data de criação; uma falha de importação pode
+  deixar uma versão de rascunho vazia criada depois da versão publicada. Antes de reconstruir do
+  zero, releia a estrutura do flow e leve o achado ao consultor — recriar por cima descarta a
+  versão publicada real, que ainda existe.
 
 ## Entrega
 
@@ -242,3 +336,7 @@ segredo), situação dos data pills (`shape_verified` ou `shape_unverified`), st
 evidência de teste quando houver, estado de publicação e qualquer pendência humana. Para conexão
 ausente, informe o link de integrações do pipe; link direto do flow/workspace só é informado quando
 a tool ou produto o retornar, nunca invente URL.
+
+Se a leitura do flow expôs credencial em código, a entrega registra **achado de segurança** (onde,
+sem reproduzir o valor) e a recomendação de migrar para Connection. Se um teste "mock" gravou em card
+real ou fez chamada paga, a entrega diz exatamente o quê.

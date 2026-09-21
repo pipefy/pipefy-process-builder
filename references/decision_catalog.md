@@ -187,3 +187,32 @@ build note.
   ou são apenas encerradas?"
 - **Typical config:** A non-compliant phase with compliance-class and classification fields.
 - **Build note:** Adds one branch phase.
+
+### 15. Porta B → Porta C (conectar o pipe novo a um pipe existente)
+- **What it is:** During a new build, the design needs a relation, connector field or automation
+  touching a pipe that already runs (handoff, parent/child, lookup).
+- **When to offer:** As soon as the spec references an existing pipe id.
+- **Offer:** "O processo novo vai se conectar ao pipe <nome/id> que já está em produção. Isso muda a
+  escrita para um pipe vivo: quer que eu inclua essa conexão agora (com relação pai/filho e os flags
+  `canCreateNewItems` explícitos), ou deixo como pendência para uma rodada de evolução?"
+- **Typical config:** `create_pipe_relation` + `update_pipe_relation` (three flags) before any
+  `create_connected_card` automation; the existing pipe is declared as a second target id.
+- **Build note:** Approval is explicit and recorded in the spec; the protocol of
+  `connector-rules.md` §5 applies (two pipes in session).
+
+### 16. Template de e-mail: nativo via perk ou manual
+- **What it is:** Whether e-mail templates can be created in this session.
+- **When to offer:** Whenever the process sends e-mail.
+- **Offer:** With `create_email_template` present: "Crio os templates direto no pipe, em pt-BR e fuso
+  America/Sao_Paulo quando o processo for brasileiro (país da pergunta 0), e ligo as automações de
+  envio." Without it: "Deixo assunto e corpo prontos para
+  colar e ligo o envio quando o template existir — ou instalamos o perk local antes do build."
+- **Build note:** See `connector-rules.md` §4.11.
+
+### 17. Padrão mínimo de instrução de agente
+- **What it is:** The agent instruction text is part of the spec, not a build-time improvisation.
+- **When to offer:** Whenever an AI agent is settled.
+- **Offer:** "Vou escrever a instrução completa do agente no spec (papel, entradas com id, critérios,
+  saídas por campo, exceções) para você revisar antes do build."
+- **Build note:** Two-line prompts generated "from context" were rewritten by hand in a real build;
+  the Builder copies the spec text verbatim (≤ 10.000 characters).

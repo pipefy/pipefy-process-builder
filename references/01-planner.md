@@ -39,6 +39,11 @@ confiança (regra escondida em célula de planilha, condicional implícita em te
 como lacuna e pergunte** — nunca infira em silêncio, porque inferência errada reaparece como
 retrabalho na construção.
 
+### 0.7 Perfil do cliente — antes do grounding
+Pergunte, com as opções de `discovery_questions.md` (pergunta 0): porte, país/idioma e se o
+cliente permite IA. Isso decide o locale dos e-mails e se a porta de agente de IA fica disponível
+na consultoria de variações.
+
 ### 1. Destino
 Pergunte **onde** o processo vai viver (organização e workspace do Pipefy do cliente) e confirme
 acesso com leitura leve escopada. Na porta C isso já está definido pelo pipe diagnosticado.
@@ -85,6 +90,16 @@ as decisões que viram condicional. Resumo que fala muito de fases e agentes de 
 campos e condicionais parece raso e esconde justamente onde o processo acerta ou erra — dê a
 campos e condicionais o mesmo peso das fases.
 
+**Fase 0 — Start form é uma seção própria do esqueleto**, separada da primeira fase visível (são
+objetos diferentes no Pipefy; fundi-los já colocou 36 campos na fase errada). Campo que uma automação,
+agente ou flow vai preencher **depois** não é obrigatório no start form — obrigatório ali bloqueia a
+criação do card por e-mail e API. Estime o número de campos contando a tabela, não de cabeça (95
+"aproximados" viraram 114 no build).
+
+**Listas de referência vêm em arquivo.** Categorias, opções de select, tabelas de regras: peça o
+arquivo (planilha/CSV), declare a contagem lida e compare caractere a caractere. Texto colado no chat
+já truncou em silêncio e virou recomendação errada entregue ao cliente.
+
 Então rode a consultoria de variações (`decision_catalog.md`): ofereça cada padrão opcional que
 couber (holds, SLA por fase e E2E, AHT, L1/L2, alçadas, spot-buy etc.).
 
@@ -99,6 +114,11 @@ explique o que ele permite medir, e inclua se o solicitante quiser. Prefira AI 2
 Ao fechar um agente no spec, **feche também o gatilho** (entrada na fase ou um campo select
 dedicado, ex.: "Iniciar análise com IA" = Sim): behavior sem gatilho discreto não é criável via
 API, e gatilho descoberto só no build vira campo fora do spec.
+
+A **instrução completa** do agente é parte do spec (`handoff-schemas.md`, seção 1 — coluna Instrução
++ arquivo `agentes/<nome>.md`): papel, entradas com id, critérios explícitos, saídas por campo,
+exceções. Gatilho na primeira fase é `card_created`. Não crie automação redundante para "disparar" um
+agente cujo behavior já dispara na criação.
 
 ### 3B. Porta C (evoluir) — plano de deltas a partir do diagnóstico
 O diagnóstico **já foi feito** pela porta A e está em `diagnostico.md` na pasta de trabalho,
@@ -115,6 +135,11 @@ primeiro; ler o pipe fase por fase aqui é desperdício.
    traz as conexões do pipe (databases, tabelas, pipes relacionados) — cheque-as antes de propor
    pipe ou tabela nova. Já se criou um pipe auxiliar de itens para o que um database conectado já
    cobria, e o consultor teve que desfazer.
+
+   Se durante uma porta **B** o desenho passar a tocar um pipe que já roda (relação pai/filho,
+   conector, `create_connected_card`), pare e ofereça a decisão 15 do `decision_catalog.md`: escrever
+   em pipe vivo exige aprovação explícita, declaração do segundo alvo por id e a relação criada com
+   os flags explícitos **antes** da automação (`connector-rules.md`, §4.2 e §5).
 3. Para qualquer `Remover` sobre estrutura com dados, o default é renomear/inativar com a tag
    `[Inativo]`; remoção real só com confirmação explícita registrada no spec.
 4. Pergunte a **estratégia de aplicação**: direto no pipe ou clone-sandbox. Recomende clone quando o
@@ -151,11 +176,14 @@ o consultor, não descoberto depois.
 
 Marque como **Manual na UI**, sem exceção, o que já se sabe: **a ligação entre as fases** (a API não
 configura para onde um card pode ir — sem isso o pipe nasce inutilizável, e a restrição vale também
-para movimento via API), a **descrição do pipe**, **criação, edição e exclusão de template de
-e-mail** (a automação de envio pode ser criada depois, quando o template existir na UI),
+para movimento via API), a **descrição do pipe**, **edição e exclusão de template de e-mail**
+(a **criação** é Nativo quando a sessão tem a tool `create_email_template` — perk local,
+`connector-rules.md` §4.11 — e Manual na UI quando não tem; decida no pré-check, não no build),
 **aplicar etiqueta por automação**, **restringir quem cria card**, **agente de IA com ação de MCP
-tool** (Slack, Docs etc. — a amarração só existe na UI) e **layout de Interfaces/Portais**. O resto
-é caso a caso.
+tool** (Slack, Docs etc. — a amarração só existe na UI), **layout de Interfaces/Portais**, **escopo
+de fase em automação de campo atualizado** (a API recusa `inPhaseId`), **operadores >= / <= em
+condição** e **formato pt-BR de data em e-mail para campos datetime/due_date**. O resto é caso a
+caso.
 
 ### 5. Spec e aprovação
 Monte o `spec.md` exatamente no schema (handoff-schemas.md, seção 1; variante de deltas na porta

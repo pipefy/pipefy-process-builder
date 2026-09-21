@@ -11,6 +11,12 @@ default). As answers arrive, recommend the best practice; this is consulting, no
 
 Each theme gives the question, suggested options, and what the answer informs.
 
+## 0. Perfil do cliente (sempre, antes do grounding)
+- "País/idioma da operação, porte aproximado (até 500 / 500–5.000 / 5.000+ pessoas), e o cliente
+  **permite agentes de IA** por contrato?"
+- → Decide o locale/fuso dos e-mails (`pt-BR`/`America/Sao_Paulo` para operação brasileira) e se a
+  porta de agente de IA fica disponível na consultoria de variações.
+
 ## 1. Process & fit (usually known from step 1 — only confirm if needed)
 - "Confirma o processo e o objetivo? O que dispara o início e o que encerra?"
 - Options: confirm, or pick the domain. → Confirms scope and the Pipefy-fit check.

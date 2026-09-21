@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>{{TITULO}}</title>
+<style>
+  /* Tokens provisórios da identidade Pipefy — substituir pelos do kit oficial quando disponível */
+  :root{
+    --pf-blue:#1B5BFF;      /* azul primário */
+    --pf-blue-dark:#0F3FB8;
+    --pf-ink:#141B2D;        /* texto */
+    --pf-muted:#5B6478;
+    --pf-bg:#F5F7FB;         /* fundo de board */
+    --pf-card:#FFFFFF;
+    --pf-line:#E1E6F0;
+    --pf-ok:#1E9E62; --pf-warn:#E8A000; --pf-crit:#D9374B;
+    --pf-ai:#7A3FF2;         /* roxo: só para Pipefy AI */
+    --font:"Inter","Segoe UI",Arial,sans-serif;
+  }
+  @page{size:1280px 720px;margin:0}
+  html,body{margin:0;padding:0;background:#fff;color:var(--pf-ink);font-family:var(--font)}
+  .slide{width:1280px;height:720px;box-sizing:border-box;padding:64px 80px 56px;position:relative;
+         background:var(--pf-card);overflow:hidden}
+  .slide + .slide{page-break-before:always}
+  .slide.cover{background:linear-gradient(135deg,var(--pf-blue) 0%,var(--pf-blue-dark) 100%);color:#fff}
+  .slide.cover h1{font-size:56px;line-height:1.1;margin:0 0 16px;font-weight:700}
+  .slide.cover .sub{font-size:24px;opacity:.9}
+  .slide.cover .meta{position:absolute;bottom:56px;left:80px;font-size:16px;opacity:.85}
+  h2{font-size:32px;margin:0 0 24px;font-weight:700}
+  h2 .kicker{display:block;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--pf-blue);margin-bottom:8px}
+  p,li,td,th{font-size:18px;line-height:1.45}
+  ul{margin:0;padding-left:22px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .kpi{background:var(--pf-bg);border:1px solid var(--pf-line);border-radius:8px;padding:20px 24px}
+  .kpi .v{font-size:40px;font-weight:700;color:var(--pf-blue);line-height:1}
+  .kpi .l{font-size:14px;color:var(--pf-muted);margin-top:8px}
+  .kpi .s{font-size:12px;color:var(--pf-muted);margin-top:6px}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;color:var(--pf-muted);font-weight:600;border-bottom:2px solid var(--pf-line);padding:8px 10px;font-size:14px}
+  td{border-bottom:1px solid var(--pf-line);padding:10px;vertical-align:top}
+  .sev{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
+  .sev.crit{background:var(--pf-crit)} .sev.alta{background:var(--pf-warn)} .sev.media{background:var(--pf-blue)} .sev.baixa{background:var(--pf-muted)}
+  .finding{border-left:4px solid var(--pf-blue);padding:8px 16px;margin-bottom:12px;background:var(--pf-bg);border-radius:0 8px 8px 0}
+  .finding.ai{border-left-color:var(--pf-ai)}
+  .roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .roadmap .step{background:var(--pf-bg);border-radius:8px;padding:16px 20px;border-top:4px solid var(--pf-blue)}
+  .roadmap .step b{display:block;font-size:14px;color:var(--pf-blue);margin-bottom:6px}
+  .note{font-size:13px;color:var(--pf-muted)}
+  .foot{position:absolute;left:80px;right:80px;bottom:24px;display:flex;justify-content:space-between;font-size:12px;color:var(--pf-muted)}
+  .foot .brand{font-weight:700;color:var(--pf-blue)}
+</style>
+</head>
+<body>
+
+<section class="slide cover">
+  <h1>{{TITULO}}</h1>
+  <div class="sub">{{SUBTITULO}}</div>
+  <div class="meta">{{CLIENTE}} · {{DATA}} · Pipefy Professional Services</div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Contexto</span>{{H_CONTEXTO}}</h2>
+  <ul>{{CONTEXTO_BULLETS}}</ul>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 2</span></div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Visão geral</span>{{H_KPIS}}</h2>
+  <div class="grid">{{KPIS}}</div>
+  <p class="note">{{KPIS_NOTA}}</p>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 3</span></div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Achados</span>{{H_ACHADOS}}</h2>
+  <table>
+    <thead><tr><th>Severidade</th><th>Onde</th><th>O que está errado</th><th>Impacto</th></tr></thead>
+    <tbody>{{ACHADOS_LINHAS}}</tbody>
+  </table>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 4</span></div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Recomendações</span>{{H_RECOMENDACOES}}</h2>
+  {{RECOMENDACOES}}
+  <p class="note">{{RECOMENDACOES_NOTA}}</p>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 5</span></div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Roadmap</span>{{H_ROADMAP}}</h2>
+  <div class="roadmap">{{ROADMAP}}</div>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 6</span></div>
+</section>
+
+<!-- Slide de ROI: incluir somente quando existir roi.md; rotular o modo -->
+<section class="slide">
+  <h2><span class="kicker">Retorno — {{ROI_MODO}}</span>{{H_ROI}}</h2>
+  <div class="grid">{{ROI_KPIS}}</div>
+  <p class="note">{{ROI_ALERTAS}}</p>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 7</span></div>
+</section>
+
+<section class="slide">
+  <h2><span class="kicker">Próximos passos</span>{{H_PROXIMOS}}</h2>
+  <ul>{{PROXIMOS_BULLETS}}</ul>
+  <div class="foot"><span class="brand">Pipefy</span><span>{{CLIENTE}} · 8</span></div>
+</section>
+
+</body>
+</html>

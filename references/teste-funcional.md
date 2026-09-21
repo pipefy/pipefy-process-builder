@@ -66,6 +66,20 @@ para aquele teste e dados descartáveis definidos no spec ou na autorização. U
 as tools de leitura de runs para conferir o resultado; não repita uma chamada após timeout nem use
 retry sem intenção explícita. Nunca publique ou habilite flow como parte do teste.
 
+## Antes de criar o primeiro card de teste
+- **Leia os webhooks e flows do pipe** (`AuditPipe` traz `webhooks`; `ap_list_flows` os flows): um
+  `card.done` apontando para iPaaS transforma card de teste em execução externa. Se houver, pare e
+  proponha plano B ao consultor (desativar temporariamente a automação de finalização, ou não testar
+  o caminho).
+- **Dados de teste válidos**: CPF com dígito verificador real, `time` em `HH:MM:SS`, `assignee_select`
+  por id de usuário — a plataforma descarta valor inválido em silêncio e o teste falha pela causa
+  errada.
+- **Espere a cascata assentar** (2–3 min) antes de ler o resultado: `phases_history` até duas leituras
+  iguais (`graphql-recipes.md`, §8.6). Leitura a 90 s já produziu FAIL com causa errada.
+- **"Mock" não é inofensivo**: em `ap_test_flow`/`ap_test_step` só o envelope é simulado; leitura de
+  card, geração de PDF, anexos e chamadas pagas são reais. Declare o efeito exato antes de rodar.
+  Reexecutar run é execução paga.
+
 ## Saída
 1. **Limpeza primeiro:** exclua ou arquive o card de teste e confirme no relatório. Card de teste
    esquecido em pipe de cliente é rastro que vira pergunta depois.

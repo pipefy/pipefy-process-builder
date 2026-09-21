@@ -5,10 +5,15 @@ Os artefatos abaixo são o canal entre as etapas. Como tudo roda no Claude Code,
 
 ```
 builds/<cliente>-<dominio>-<AAAA-MM-DD>/
-  diagnostico.md      ← porta A (e início da porta C)
+  diagnostico.md      ← porta A (e início das portas C, D e E)
   spec.md             ← Planner        (portas B e C)
+  agentes/<nome>.md    ← instrução completa de cada agente (Planner)
+  emails/<nome>.html   ← corpo de template de e-mail quando longo (Planner/Builder)
   changes.md          ← Builder        (portas B e C)
   conferencia.md      ← Conferência    (portas B e C)
+  roi-inputs.md       ← porta D, coleta (orquestrador)
+  roi.md              ← porta D, cálculo (subagente)
+  deck.md · deck.html · deck.pdf ← porta E
   test-results.md     ← Teste funcional (opcional, sob demanda)
   review.md           ← Review completo (opcional, sob demanda)
   snapshot-as-is.md   ← obrigatório na porta C, antes de qualquer escrita
@@ -49,17 +54,28 @@ automações + agentes de IA + integrações iPaaS.
 1. **Objetivo do processo** — 2 a 4 frases. O que o processo faz e para quem.
 2. **Fases** — tabela: `# | Nome da fase | Objetivo | SLA | Responsável`.
 3. **Campos por fase** — uma tabela por fase: `Campo | Tipo | Obrigatório | Preenchido por
-   (Manual / Automação / Conector / Agente IA) | Condicional (se houver)`. Inclui o formulário
-   inicial como "Fase 0 — Start form".
-4. **Automações** — tabela: `Nome (nomenclatura oficial) | Gatilho | Condição | Ação`.
+   (Manual / Automação / Conector / Agente IA) | Condicional (se houver)`. **A primeira tabela é
+   obrigatoriamente "Fase 0 — Start form"**, distinta da primeira fase visível: são objetos
+   diferentes no Pipefy (o start form é uma fase oculta, `startFormPhaseId`), e um spec que os
+   fundiu fez 36 campos nascerem na fase errada em 3 pipes. Campos que serão preenchidos **depois**
+   por automação, agente ou iPaaS não podem ser obrigatórios no start form (bloqueiam a criação do
+   card por e-mail e API).
+4. **Automações** — tabela: `Nome (nomenclatura oficial) | Gatilho | Condição | Ação`. E-mail: cada
+   automação `send_email_template` referencia uma linha da tabela **Templates de e-mail**
+   (`Nome (nomenclatura oficial) | Assunto | Corpo (HTML, resumo ≤ 3 linhas + arquivo em
+   emails/<nome>.html quando longo) | De (nome/e-mail) | Para | CC/BCC | locale/fuso | Entregabilidade
+   (Nativo via create_email_template | Manual na UI)`). Não crie automação redundante para disparar
+   agente cujo behavior já tem `card_created`.
 5. **Condicionais** — tabela: `Nome | Fase de aplicação (onde estão os campos afetados) |
    Campo-gatilho | Regra (operação + valor) | Ação (esconder/mostrar quais campos, em que ramo)`.
    Nota: na plataforma, toda condicional é indexada sob a fase virtual Start form — a "fase de
    aplicação" do spec descreve onde a regra age (os campos das ações), não o atributo `phase`.
-6. **Agentes de IA** — tabela: `Nome | Fase(s) | Gatilho (entrada na fase / campo select dedicado)
-   | Tipo (AI 2.0 / +IDP / +Websearch) | Entradas | Saídas | Observações de consumo`. Behavior sem
-   gatilho discreto não é criável via API — gatilho indefinido é open question, não detalhe que o
-   Builder resolve sozinho.
+6. **Agentes de IA** — tabela: `Nome | Fase(s) | Gatilho (entrada na fase / campo select dedicado) |
+   Tipo (AI 2.0 / +IDP / +Websearch) | Entradas | Saídas | Instrução (resumo ≤ 3 linhas + arquivo
+   agentes/<nome>.md com o texto completo) | Observações de consumo`. A instrução completa é parte do
+   spec: papel e objetivo, entradas nomeadas com id, critérios de decisão explícitos, saídas por campo
+   com formato, exceções. Behavior sem gatilho discreto não é criável via API. Gatilho na **primeira
+   fase** é `card_created`, nunca `card_moved`.
 7. **Integrações iPaaS** — tabela: `Nome | Objetivo | Pipe dono (id) | Trigger | Steps/pieces |
    Entradas → saídas e procedência dos data pills (schema do pipe/piece/amostra) | Conexões requeridas
    (externalId reutilizado / a confirmar após criação) | Teste/e efeito externo | Estado esperado
@@ -101,20 +117,21 @@ status: COMPLETO | PARCIAL
 ```
 
 **Resumo** (≤5 linhas): pipe + contagens (fases/campos/automações/agentes/integrações) + nº de desvios + nº de
-pendências.
+pendências + totais lidos vs. esperados em toda listagem paginada ("automações: lidas 178 de 178").
 
 ### Seções (ordem fixa)
 1. **Fases criadas** — tabela: `# | Nome | phase_id`. Confirmar remoção das fases default.
 2. **Campos criados** — tabela por fase: `Campo | internal_id | Tipo`.
 3. **Automações e condicionais** — tabela: `Nome | id | Status (criada e verificada / criada sem
-   verificação / não criada — motivo)`.
+   verificação / não criada — motivo)`. Linha adicional: `Templates de e-mail | id | criado via
+   create_email_template e relido em get_email_templates | pendência manual (conteúdo em emails/)`.
 4. **Agentes de IA** — tabela: `Nome | Status (configurado / parcial / manual pendente) | O que falta`.
 5. **Integrações iPaaS** — tabela: `Nome | Pipe dono | flow_id | Decisões fechadas | Conexões
    reutilizadas (externalId) | Data pills (shape_verified / shape_unverified) | Validação estrutural |
    Teste (run_id/status ou não executado) | Publicação (rascunho/publicado/habilitado) | Status |
    O que falta`. **Decisões fechadas** registra, por flow, cada escolha de piece/step já decidida no
    formato `piece ou step escolhido (+ versão) | motivo | evidência (leitura do pipe, schema da piece
-   ou run que comprovou)` — ex.: `getCardById v0.2.0 | devolve fields_by_phase completo, sem
+   ou run que comprovou)` — ex.: `getCardById v0.2.0 | devolve todos os campos do card indexados por slug (data.card.fields), sem
    custom_api_call | leitura do pipe`. A versão da piece entra porque envelope e inputs mudam entre
    versões, e um mesmo projeto costuma ter várias em uso ao mesmo tempo. Esta coluna existe porque a
    conversa não sobrevive a timeout ou reconexão do connector, e decisão perdida volta como
@@ -214,9 +231,11 @@ ciclo: <nº>
 
 Formato completo em `diagnostico.md` (o playbook). Contrato mínimo: frontmatter com `trabalho`,
 `modo` (pipe | documentacao), `cliente`, `pipe_analisado`, `dominio`, `diagnosticado_em`,
-`defeitos`; seções **Resumo executivo**, **Defeitos encontrados** (ou
-**Lacunas**, no modo documentação), **Conformidade**, **Alinhamento à BU**, **Oportunidades** e
-**As-is** (só modo pipe).
+`defeitos`; seções **Resumo executivo**,
+**Defeitos encontrados** (ou **Lacunas**, no modo documentação; inclui também **Integrações iPaaS**
+— flows, estado, runs — e **Lint estrutural**, ver `diagnostico.md`, passo 2.5), **Conformidade**,
+**Alinhamento à BU**, **Oportunidades** e **As-is** (só modo pipe). Toda contagem declara "lidos N
+de N".
 
 A seção **As-is** é o que permite a porta C montar deltas sem reler o pipe — ela tem que trazer
 ids reais.
@@ -243,15 +262,91 @@ phase_id, campos com internal_id, automações e condicionais com id, agentes co
 
 ---
 
+## 8. `roi-inputs.md` — escrito pelo orquestrador (porta D), lido pelo subagente de cálculo
+
+```yaml
+---
+trabalho: <slug>
+cliente: <nome>
+pipe_analisado: <id + url>
+modo: realizado | projetado
+periodo_inicio: <YYYY-MM-DD>
+periodo_fim: <YYYY-MM-DD>
+moeda_base: BRL
+cambio_usd_brl: <valor informado | n/a>      # com data e quem informou, na seção 4
+coletado_em: <YYYY-MM-DD>
+---
+```
+1. **Investimento** — tabela: `Item | Valor | Moeda | Recorrente? (sim/não, periodicidade) | Origem
+   (quem informou / documento)`. Ex.: licença, horas de Professional Services, custos de integração.
+2. **Benefício** — tabela: `Tipo (economia de custo / ganho de produtividade / aumento de receita /
+   horas-FTE economizadas) | Quantidade | Unidade | Período | Origem | Conversão financeira (custo
+   FTE informado ou "não convertível")`. Horas sem custo FTE informado ficam como horas.
+3. **Métricas lidas do pipe** — tabela: `Métrica | Valor | Fonte (query/tool) | Limitação`. Ex.:
+   cards criados no período, execuções por automação (avaliadas, não executadas), runs iPaaS, tempo
+   médio por fase na amostra de N cards, cards atrasados.
+4. **Premissas explicitamente informadas** — uma por linha, com quem informou e quando.
+5. **Lacunas** — o que faltou para um cálculo confiável e quem responde.
+
+---
+
+## 9. `roi.md` — escrito pelo subagente de cálculo (porta D), lido pelo orquestrador e pela porta E
+
+```yaml
+---
+trabalho: <slug>
+cliente: <nome>
+modo: realizado | projetado
+periodo: <início a fim>
+moeda: BRL
+status: calculado | nao_calculavel
+fonte_inputs: roi-inputs.md
+calculado_em: <YYYY-MM-DD HH:MM>
+---
+```
+Seções na ordem fixa do prompt de cálculo (`references/roi.md`): 1. **Dados utilizados** (com
+origem de cada valor) · 2. **Premissas** (somente as explicitamente informadas) · 3. **Cálculo**
+(fórmula com valores substituídos) · 4. **Resultado** (investimento total, benefício financeiro,
+retorno líquido, ROI %, payback em meses) · 5. **Validação** (checagem independente) · 6. **Alertas**
+(limitações, dados faltantes, arredondamentos, inconsistências). Se `status: nao_calculavel`, a
+seção 4 traz só a frase "ROI não calculável com segurança" e a 6 lista o que falta.
+
+---
+
+## 10. `deck.md` — escrito pelo subagente de redação (porta E), completado pelo orquestrador
+
+```yaml
+---
+trabalho: <slug>
+cliente: <nome>
+base: diagnostico | diagnostico+roi
+gerado_em: <YYYY-MM-DD HH:MM>
+arquivos: [deck.html, deck.pdf]
+drive_link: <url | n/a>
+kit_de_marca: provisorio | oficial
+---
+```
+1. **Roteiro** — tabela: `# | Slide | Fonte (arquivo e seção) | Números usados`.
+2. **QA** — checklist com resultado: PDF com camada de texto; todo número do deck existe em
+   `diagnostico.md`/`roi.md`; nenhum rótulo com `[`/`]` quebrando diagrama; nenhum segredo, token ou
+   dado pessoal; modo do ROI rotulado.
+3. **Pendências** — o que o consultor revisa antes de apresentar.
+
+---
+
 ## Matriz de leitura (quem lê o quê)
 
 | Etapa | Lê | Escreve |
 |---|---|---|
-| Diagnóstico (porta A) | pipe via `AuditPipe` (1 chamada) + `golden_standard_schema.md`/`decision_catalog.md` + documentos do cliente | `diagnostico.md` |
+| Diagnóstico (porta A) | pipe via `AuditPipe` + automações e agentes paginados + flows iPaaS quando houver (3 a 6 chamadas) + `golden_standard_schema.md`/`decision_catalog.md` + documentos do cliente | `diagnostico.md` |
 | Planner | `golden_standard_schema.md`/`decision_catalog.md` + conversa com o solicitante + `diagnostico.md` (porta C) | `spec.md` |
 | Builder | `spec.md` (+ divergências da `conferencia.md` ou correções do `review.md`) | pipe do cliente + `changes.md` (+ `snapshot-as-is.md` na porta C) |
 | Conferência | `spec.md` + `changes.md` + 1 leitura do pipe + leitura iPaaS quando houver integração | `conferencia.md` |
 | Teste funcional (opcional) | `spec.md` + `changes.md` + `conferencia.md` | card de teste (temporário) + runs iPaaS aprovados + `test-results.md` |
 | Review completo (opcional) | `spec.md` + `changes.md` + `conferencia.md` + `test-results.md` + 1 leitura do pipe | `review.md` (+ `snapshot-final.md` se pedido) |
+| Porta D — coleta (orquestrador) | `diagnostico.md` + métricas do pipe (`graphql-recipes.md` §8.5–8.7, somente leitura) + respostas do consultor | `roi-inputs.md` |
+| Porta D — cálculo (subagente) | `roi-inputs.md` + `diagnostico.md` | `roi.md` |
+| Porta E — redação (subagente) | `diagnostico.md` (+ `roi.md`) + `references/deck-template.html` | `deck.md`, `deck.html` |
+| Porta E — geração e QA (orquestrador) | `deck.html`, `deck.md` | `deck.pdf` (+ link do Drive) |
 
 Ninguém lê a conversa de outra etapa. Ninguém relê o pipe fase por fase.

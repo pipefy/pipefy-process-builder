@@ -22,9 +22,12 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
    > original em vez do clone. Qualquer diferença no original é **divergência crítica** — registre o
    > que mudou com ids e diga, no relatório, que precisa de aviso imediato ao responsável pelo pipe.
 2. **Uma única leitura do pipe:** rode a query `AuditPipe` de `graphql-recipes.md` (seção 1). Para
-   automações, use a query da **seção 5** (que traz a condição de disparo — `get_automations` a
-   omite, e isso já fez um revisor reprovar um build por um dado que existia). E
-   `get_ai_agents(repo_uuid=...)` **só se** o spec previr agentes. São 2 ou 3 chamadas no total.
+   automações, use a query da **seção 5 paginada até `hasNextPage: false`** e, para conferir as
+   automações do changes uma a uma, o verificador **§8.2** (`automation(id:)` com aliases). Uma
+   conferência já emitiu DIVERGENTE falso com 10 "divergências críticas" porque a listagem cortou em
+   50 e o pipe tinha 178. Agentes: `aiAgents` paginado (§8.4), **só se** o spec previr agentes — a
+   tool `get_ai_agents` devolve uma página sem aviso e não serve para conferir. Registre os totais
+   lidos.
    **Nunca** chame `get_phase_fields` por fase — custa 25 turns por algo que a query já entrega.
 3. Compare item a item com o spec:
    - **Fases** — nome, ordem, quais são `done`. Nada sobrando, nada faltando.
@@ -39,14 +42,16 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
      é indexação da plataforma, não defeito; a ancoragem real é a das ações
      (`actions[].phase`/`phaseField`). Este é o objeto mais traiçoeiro: responde "criado com
      sucesso" e às vezes não persiste. Condicional ausente, sem valor ou com ação no campo errado
-     é a divergência mais comum de todas.
+     é a divergência mais comum de todas. **`field_address` tem que ser `internal_id` numérico** —
+     slug persiste e nunca dispara; campo da condição e campos das ações na mesma fase.
    - **Automações** — nome, gatilho, **condição** e ação. Marque as que o changes declarou como
      "criada sem verificação". Automação com `active: false` esquecida desativada é divergência.
    - **Agentes de IA** — existem, estão nas fases previstas e **no estado de ativação que o spec
      pediu**. Agente ativo que o spec não pediu ativo é divergência de severidade alta: consome
      crédito e age nos cards do cliente. Confira também **as saídas**: os campos que cada behavior
      preenche batem com a coluna Saídas do spec — agente que omite um campo de saída já passou
-     despercebido em build real.
+     despercebido em build real. `capabilitiesAttributes` (ex.: `advanced_ocr`) preservado em
+     relação ao spec/snapshot — um update já o apagou em silêncio.
    - **Integrações iPaaS** — para cada linha do spec, use o catálogo do `pipe_id` dono para ler o
      flow e validar: `flow_id`, trigger, steps/pieces, conexões reutilizadas por `externalId`, estado
      de validação, situação dos data pills e estado de publicação. Flow publicado/habilitado sem
@@ -56,7 +61,12 @@ o formato do spec e do changes) e, se houver integração iPaaS, `ipaas.md`.
      que os dados atravessam. Step com `skip: true` existe, valida e nunca executa — se o spec
      previa aquele step, é divergência. Conexão ausente ou pendência manual corretamente registrada
      com link de integrações não é
-     divergência; ausência desse registro é.
+     divergência; ausência desse registro é. Step com prop DYNAMIC e `propertySettings` vazio é
+     divergência (válido que não aplica); referências `{{step_N...}}` conferidas após qualquer
+     edição de step; `custom_api_call` sem "decisão fechada" que cite a lista de ações lida é
+     divergência; credencial literal em código é **alerta de segurança** (onde, nunca o valor).
+   - **Templates de e-mail** — cada template do spec existe em `get_email_templates` (quando criado
+     via `create_email_template`) e a automação de envio aponta para o id certo.
    - **Desvios declarados** — os que o changes já registrou não são novidade: confirme que são
      exatamente esses e nada além.
 4. **Lints obrigatórios** — três verificações que não vêm do spec, mas quebram o processo na prática
@@ -96,9 +106,10 @@ modo: completa | incremental
 2. **Pendências manuais na UI** — o que a API não configura e ficou faltando para o processo
    funcionar. **A ligação das fases vem primeiro e em destaque**, com a lista origem → destino.
 3. **Não verificável nesta etapa** — o que só o teste funcional ou a UI mostram (comportamento de
-   automação, visual de condicional, template de e-mail). Uma linha cada, sem alarmismo: é
+   automação, visual de condicional, template de e-mail criado na UI — o criado via
+   `create_email_template` é verificável em `get_email_templates`). Uma linha cada, sem alarmismo: é
    informação para o consultor decidir se quer o teste funcional.
-4. **Totais** — conferidos por categoria, para o consultor saber o que foi coberto.
+4. Totais conferidos **e lidos** por categoria ("automações: 178 lidas de 178 — 23 conferidas").
 
 `resultado: CONFORME` só quando a tabela de divergências estiver vazia. Qualquer divergência
 estrutural = `DIVERGENTE`. Pendência manual que a API não permite configurar **não** conta como

@@ -55,7 +55,7 @@ query AuditPipe($id: ID!) {
     parentsRelations { id name }
     childrenRelations { id name }
     webhooks { id name url actions }
-    start_form_fields { id internal_id label type required options }
+    start_form_fields { id internal_id uuid label type required options }
     fieldConditions {
       id name
       condition { expressions_structure expressions { structure_id field_address operation value } }
@@ -65,7 +65,7 @@ query AuditPipe($id: ID!) {
       id name index done description
       next_phase_ids
       cards_can_be_moved_to_phases { id name }
-      fields { id internal_id label type required editable options description index }
+      fields { id internal_id uuid label type required editable options description index }
     }
   }
 }
@@ -73,7 +73,16 @@ query AuditPipe($id: ID!) {
 
 Variáveis: `{"id": "<pipe_id>"}`.
 
-**O que ela já responde sozinha:** fases (nomes, ordem, done), campos por fase com tipo e
+**Pipe grande (dezenas de condicionais, centenas de campos): a resposta pode passar do limite de
+retorno da tool e ser salva em arquivo.** Nesse caso rode duas variantes em vez de processar o
+arquivo à mão: `AuditPipeCore` = a query acima **sem** o bloco `fieldConditions`; `AuditPipeConditions`
+= `pipe(id:) { id fieldConditions { ...o mesmo bloco... } }`. Duas chamadas, zero parsing manual.
+
+**O que a `AuditPipe` não vê e a porta A precisa ver:** flows iPaaS. Quando o pipe tiver iPaaS
+habilitado, `get_ipaas_tools(pipe_id)` + `ap_list_flows` + `ap_list_runs` fazem parte da leitura
+padrão (`diagnostico.md`). Webhooks são só o rastro; o flow é o objeto.
+
+**O que ela já responde sozinha:** fases (nomes, ordem, done), campos por fase com uuid, tipo e
 obrigatoriedade, opções de select, movimentos permitidos entre fases, defaults de segurança,
 campo de título, conexões com outros pipes, webhooks (o rastro de integrações externas) e **as
 condicionais com a regra completa** — expressões (campo, operação, valor) e ações (qual campo
@@ -94,9 +103,11 @@ Três pontos desta query evitam diagnósticos errados que já aconteceram (tudo 
 
 **O que ela não traz** (some 2 chamadas, não 24):
 - Automações → a query da **seção 5** (com a condição de disparo, que `get_automations` omite).
-- Agentes de IA → `get_ai_agents(repo_uuid=...)` (só quando o spec previr agentes).
+- Agentes de IA → `aiAgents` paginado (§8.4), só quando o spec previr agentes — `get_ai_agents`
+  devolve uma página sem aviso.
 
-Então uma auditoria completa custa **2 a 3 chamadas**. Se você se pegar chamando
+Então uma auditoria completa custa **3 a 6 chamadas, paginadas** — mais a leitura iPaaS
+(`get_ipaas_tools` + `ap_list_flows`) quando o pipe tiver flows. Se você se pegar chamando
 `get_phase_fields` em loop, pare: você está pagando 25 turns por algo que custa 1.
 
 ---
@@ -185,8 +196,9 @@ que existia, mas estava invisível. Sempre que precisar auditar ou revisar autom
 query em vez da tool:
 
 ```graphql
-query AutomacoesComCondicao($orgId: ID!, $pipeId: ID!) {
-  automations(organizationId: $orgId, repoId: $pipeId) {
+query AutomacoesComCondicao($orgId: ID!, $pipeId: ID!, $after: String) {
+  automations(organizationId: $orgId, repoId: $pipeId, first: 50, after: $after) {
+    pageInfo { hasNextPage endCursor }
     edges { node {
       id name active event_id action_id disabledReason
       condition {
@@ -202,6 +214,12 @@ query AutomacoesComCondicao($orgId: ID!, $pipeId: ID!) {
 Variáveis: `{"orgId": "<organization_id>", "pipeId": "<pipe_id>"}`. O `organization_id` é
 obrigatório. Note o `active` e o `disabledReason`: automação criada com `active=false` para teste e
 esquecida desativada é defeito comum.
+
+**Pagina até `hasNextPage: false`.** A conexão corta em 50 mesmo com `first: 400`; um pipe de 178
+automações mostrou 50, e uma conferência reprovou um build inteiro por "automação inexistente".
+Declare no relatório "lidas N de N". Para checar automações específicas sem paginar, use o
+verificador da §8.2. Nota: a issue #612 do `ai-toolkit` (condição em `get_automations`) foi fechada em
+17/09/2026 — se a tool passar a devolver `condition`, ela serve; a query continua valendo como fonte.
 
 ## 6. Configurar segurança do pipe e campo de título
 
@@ -269,3 +287,90 @@ releia antes de repetir.
 > `fields_attributes[].field_value` é **LIST** (`["valor"]`) para qualquer tipo de campo, anexo
 > incluído — e errar esse formato devolve a mensagem enganosa "campo obrigatório não preenchido".
 > O fluxo completo de upload está em `connector-rules.md`, seção 4.8.
+
+## 8. Receitas da rodada 3.03
+
+### 8.1 updatePhaseField por uuid
+Endereçar por slug já alterou campos de **outro pipe** (slug não é único). Use o `uuid` do campo
+lido na `AuditPipe` do alvo e confira o `internal_id` devolvido:
+
+```graphql
+mutation AtualizarCampo($uuid: ID!, $label: String!, $required: Boolean) {
+  updatePhaseField(input: { uuid: $uuid, id: $uuid, label: $label, required: $required }) {
+    phase_field { id internal_id uuid label required }
+  }
+}
+```
+`label` é obrigatório — envie o rótulo **atual** (valor diferente renomeia). Se `internal_id` da
+resposta ≠ o esperado: pare, reverta, avise. *(Input validado por introspecção em 2026-09-21:
+`UpdatePhaseFieldInput` tem `uuid: ID`, `id: ID!`, `label: String!` — a mutation não foi executada,
+só o shape, conforme a regra da abertura deste arquivo. Tabela completa de identificador por
+mutation: `connector-rules.md`, §4.3.)*
+
+### 8.2 Verificador de automações por id (aliases)
+Imune ao corte de 50. Um documento confere até ~15 automações:
+
+```graphql
+query VerificarAutomacoes {
+  a1: automation(id: "<id1>") { id name active event_id action_id condition { expressions_structure expressions { field_address operation value } } }
+  a2: automation(id: "<id2>") { id name active event_id action_id condition { expressions_structure expressions { field_address operation value } } }
+}
+```
+
+### 8.3 Automações paginadas
+A query da seção 5 com `$after` = `endCursor` da página anterior, até `hasNextPage: false`.
+
+### 8.4 Agentes de IA paginados
+`get_ai_agents` devolve uma página (10 de 22 num pipe real) sem sinal. Leia por GraphQL:
+
+```graphql
+query Agentes($repoUuid: ID!, $after: String) {
+  aiAgents(repoUuid: $repoUuid, first: 30, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    edges { node { uuid name disabledAt lastExecution needReview } }
+  }
+}
+```
+`AiAgent` **não tem `id`** — identifica-se por `uuid`; `disabledAt: null` = ativo. `repoUuid` é o
+`uuid` do pipe (na `AuditPipe`). Snapshot de agentes só é válido com `hasNextPage: false`.
+*(Validado ao vivo em 2026-09-21 no sandbox 301781351.)*
+
+### 8.5 Logs de execução (automationLogsByRepo)
+Para contar execuções (a métrica `executionMetrics` pode vir zerada):
+
+```graphql
+query Logs($repoId: ID!, $after: String) {
+  automationLogsByRepo(repoId: $repoId, first: 50, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    edges { node { uuid automationId automationName cardId cardTitle datetime status } }
+  }
+}
+```
+`AutomationLog` **não tem `id`** (é `uuid`); `cardId` pode vir nulo. `status: success` =
+**avaliada**, não executada (`connector-rules.md`, §4.5). *(Validado ao vivo em 2026-09-21.)*
+
+### 8.6 phases_history — assentamento da cascata
+Antes de julgar resultado de teste (cascata leva 2–3 min):
+
+```graphql
+query Assentou($id: ID!) {
+  card(id: $id) { id late expired
+    phases_history { phase { id name } firstTimeIn lastTimeOut duration } }
+}
+```
+A fase atual é a entrada com `lastTimeOut: null`. Releia a cada 60 s até duas leituras iguais.
+
+### 8.7 Registros de tabela paginados
+`table_records` ignora `first` acima de 50 e não devolve total:
+
+```graphql
+query Registros($tableId: ID!, $after: String) {
+  table_records(table_id: $tableId, first: 50, after: $after) {
+    pageInfo { hasNextPage endCursor }
+    edges { node { id title record_fields { name value } } }
+  }
+}
+```
+Releitura completa após cada lote de escrita; compare **estrito** (caractere a caractere) além do
+normalizado. *(Shape validado só como documento em 2026-09-21 — id inexistente devolveu erro
+genérico, não dado real; confirme com tabela real na primeira utilização.)*

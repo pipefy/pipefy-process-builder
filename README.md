@@ -1,8 +1,9 @@
 # Pipefy Process Builder
 
 Skill do Claude Code para consultores de Professional Services da Pipefy. Conduz, numa única
-conversa, o diagnóstico, a criação ou a evolução de um processo (pipe) no Pipefy do cliente —
-do pedido inicial até a entrega, com aprovação explícita antes de qualquer escrita.
+conversa, o diagnóstico, a criação, a evolução, o cálculo de ROI ou a montagem de um deck de
+apresentação para um processo (pipe) no Pipefy do cliente — do pedido inicial até a entrega, com
+aprovação explícita antes de qualquer escrita.
 
 ## Pré-requisitos
 
@@ -16,16 +17,22 @@ do pedido inicial até a entrega, com aprovação explícita antes de qualquer e
 ## Instalação
 
 Copie (ou clone) esta pasta para o diretório de skills do Claude Code, mantendo `SKILL.md` na raiz
-e a pasta `references/` intacta ao lado dele:
+e as pastas `references/` e `perks/` intactas ao lado dele:
 
 ```
 <diretório de skills>/pipefy-process-builder/
 ├── SKILL.md
-└── references/
-    ├── 01-planner.md
-    ├── 02-builder.md
-    └── ...
+├── references/
+│   ├── 01-planner.md
+│   ├── 02-builder.md
+│   └── ...
+└── perks/
+    └── create-email-template/
 ```
+
+`perks/create-email-template/` é um wrapper MCP local **opcional**: sem ele, criação de template de
+e-mail cai automaticamente como pendência manual na UI (veja `perks/create-email-template/README.md`
+para instalar).
 
 Depois de instalada, a skill é carregada automaticamente pelo Claude Code quando o pedido do
 consultor casar com sua descrição (diagnosticar, criar ou evoluir um processo no Pipefy).
@@ -38,6 +45,8 @@ Basta pedir em português, em uma conversa normal com o Claude Code. Alguns exem
 - *"Quero montar um processo de onboarding do zero"* → abre a **porta B** (criação, com discovery e
   aprovação de spec antes de construir).
 - *"Preciso ajustar o pipe de Reembolso que já existe"* → abre a **porta C** (evolução, com deltas).
+- *"Quanto esse processo já economizou?"* → abre a **porta D** (ROI, a partir de um diagnóstico).
+- *"Monta um deck com esse diagnóstico para eu apresentar"* → abre a **porta E** (deck em PDF).
 
 A skill conduz a conversa inteira — discovery, aprovação, construção via MCP e conferência
 estrutural — e cria uma pasta `builds/<cliente>-<dominio>-<AAAA-MM-DD>/` no diretório onde o Claude
@@ -62,5 +71,8 @@ Nenhuma escrita no Pipefy acontece sem aprovação explícita do consultor sobre
 | `references/graphql-recipes.md` | Receitas de leitura/escrita em lote via GraphQL |
 | `references/handoff-schemas.md` | Contrato de cada arquivo gerado durante o uso |
 | `references/ipaas.md` | Fluxo para integrações iPaaS no escopo |
+| `references/roi.md` | Cálculo de ROI do processo (porta D) |
+| `references/deck.md`, `references/deck-template.html` | Deck de apresentação em PDF (porta E) |
 | `references/teste-funcional.md`, `references/review-completo.md` | Etapas opcionais, sob pedido do consultor |
 | `references/discovery_questions.md`, `references/modeling_best_practices.md`, `references/nomenclature.md` | Apoio ao discovery e às boas práticas de modelagem |
+| `perks/create-email-template/` | Wrapper MCP local opcional para criar template de e-mail nativamente |

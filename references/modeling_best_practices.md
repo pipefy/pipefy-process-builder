@@ -19,7 +19,7 @@ phases, fields, and automations keep processes auditable instead of becoming "bl
   automations and flows; centralize on one.
 - **Single vs multiple pipes.** Split into a new pipe when scope changes (e.g., an order becomes a
   quote), for 1-to-N relationships, or when different teams need different permissions.
-- **"Magic number" of phases: 10–15.** Above 15 is "exotic"; above 10, evaluate splitting.
+- **"Magic number" of phases: 10–15.** Above 15 is "exotic"; bellow 10, evaluate splitting.
 - **Phase colors = responsibility.** Phases handled by similar agents (all approvers, all requesters)
   share the same color for visual readability.
 - **No empty "management pipes."** Don't create status-only pipes; use Interfaces for the macro view.

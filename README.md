@@ -16,8 +16,20 @@ aprovação explícita antes de qualquer escrita.
 
 ## Instalação
 
-Copie (ou clone) esta pasta para o diretório de skills do Claude Code, mantendo `SKILL.md` na raiz
-e as pastas `references/` e `perks/` intactas ao lado dele:
+O pacote é publicado no npm como
+[`@pipefy/pipefy-process-builder`](https://www.npmjs.com/package/@pipefy/pipefy-process-builder). Um
+script de `postinstall` já coloca `SKILL.md`, `references/` e `perks/` no lugar certo — não precisa
+copiar nada na mão:
+
+```bash
+# no projeto (instala em .claude/skills/pipefy-process-builder/)
+npm install @pipefy/pipefy-process-builder
+
+# globalmente (instala em ~/.claude/skills/pipefy-process-builder/, disponível em qualquer projeto)
+npm install -g @pipefy/pipefy-process-builder
+```
+
+Resultado esperado em qualquer um dos dois casos:
 
 ```
 <diretório de skills>/pipefy-process-builder/
@@ -29,6 +41,14 @@ e as pastas `references/` e `perks/` intactas ao lado dele:
 └── perks/
     └── create-email-template/
 ```
+
+**Se você (ou sua política de CI/segurança) instalar com `--ignore-scripts`**, o `postinstall` não
+roda e os arquivos ficam só dentro de `node_modules/@pipefy/pipefy-process-builder/` — nesse caso,
+copie `SKILL.md`, `references/` e `perks/` de lá para o diretório de skills acima manualmente (ou
+rode `node node_modules/@pipefy/pipefy-process-builder/scripts/install-skill.js` depois, que faz a
+mesma cópia).
+
+---
 
 `perks/create-email-template/` é um wrapper MCP local **opcional**: sem ele, criação de template de
 e-mail cai automaticamente como pendência manual na UI (veja `perks/create-email-template/README.md`

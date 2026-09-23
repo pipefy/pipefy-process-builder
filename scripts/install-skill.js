@@ -33,8 +33,13 @@ try {
   fs.mkdirSync(targetDir, { recursive: true })
   for (const name of FILES_TO_COPY) {
     const src = path.join(packageRoot, name)
+    const dest = path.join(targetDir, name)
+    // Remove the previous copy first: cpSync only merges/overwrites, it
+    // never deletes -- without this, a file dropped between versions
+    // would linger in dest forever, stale and out of sync with SKILL.md.
+    fs.rmSync(dest, { recursive: true, force: true })
     if (fs.existsSync(src)) {
-      fs.cpSync(src, path.join(targetDir, name), { recursive: true })
+      fs.cpSync(src, dest, { recursive: true })
     }
   }
   console.log(`[${SKILL_NAME}] skill installed to ${targetDir}`)
